@@ -183,3 +183,32 @@ export function savingsBalance(txs: SavingsTxRow[]): number {
   for (const t of txs) balance += t.type === 'deposit' ? t.amount : -t.amount;
   return balance;
 }
+
+/** Элемент чек-листа месяца: плановая сумма обязательства + факт оплаты (если есть). */
+export interface BillItem {
+  defaultAmount: number;
+  payment?: { amount: number } | null;
+}
+
+export interface BillsSummary {
+  paidCount: number;
+  totalCount: number;
+  paidSum: number;
+  plannedSum: number;
+  reservedSum: number;
+}
+
+/**
+ * Сводка «Платежи месяца» (ТЗ §7.5).
+ * reservedSum — Σ incomes.to_bills доходов с датой в месяце M; никуда не переносится (информационно).
+ */
+export function billsSummary(items: BillItem[], incomesToBills: number[]): BillsSummary {
+  const paid = items.filter((i) => i.payment != null);
+  return {
+    totalCount: items.length,
+    paidCount: paid.length,
+    paidSum: paid.reduce((s, i) => s + (i.payment as { amount: number }).amount, 0),
+    plannedSum: items.reduce((s, i) => s + i.defaultAmount, 0),
+    reservedSum: incomesToBills.reduce((s, x) => s + x, 0),
+  };
+}

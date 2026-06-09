@@ -6,6 +6,7 @@ import {
   arcFill,
   billStatus,
   savingsBalance,
+  billsSummary,
   type DailyData,
 } from './logic.js';
 
@@ -140,6 +141,23 @@ describe('§7.4 billStatus', () => {
   });
   it('будущий месяц → предстоит', () => {
     expect(billStatus({ dueDay: 1, hasPayment: false, month: '2026-07', today: '2026-06-10' })).toBe('upcoming');
+  });
+});
+
+describe('§7.5 billsSummary', () => {
+  it('считает оплачено/всего, суммы и отложено', () => {
+    const items = [
+      { defaultAmount: 200000, payment: { amount: 210000 } }, // оплачен фактической суммой
+      { defaultAmount: 80000, payment: null }, // не оплачен
+      { defaultAmount: 150000, payment: { amount: 150000 } },
+    ];
+    expect(billsSummary(items, [240000, 10000])).toEqual({
+      totalCount: 3,
+      paidCount: 2,
+      paidSum: 360000, // 210000 + 150000
+      plannedSum: 430000, // 200000 + 80000 + 150000
+      reservedSum: 250000, // Σ to_bills доходов месяца
+    });
   });
 });
 
