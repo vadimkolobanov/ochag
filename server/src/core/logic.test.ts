@@ -1,0 +1,156 @@
+import { describe, it, expect } from 'vitest';
+import {
+  nextPayday,
+  dailyBalance,
+  perDay,
+  arcFill,
+  billStatus,
+  savingsBalance,
+  type DailyData,
+} from './logic.js';
+
+// Проверенные по календарю 2026 факты (UTC):
+//   2026-09-19 — суббота, 2026-09-18 — пятница
+//   2026-04-19 — воскресенье, 2026-04-17 — пятница
+//   2026-06-19 — пятница, 2026-07-19 — воскресенье (→ 2026-07-17 пятница)
+//   2026-06-10 — среда, 2026-06-25 — четверг
+
+describe('§7.1 nextPayday', () => {
+  it('19-е = суббота → 18-е (пятница)', () => {
+    expect(nextPayday([19], '2026-09-01')).toEqual({ date: '2026-09-18', daysLeft: 17 });
+  });
+
+  it('19-е = воскресенье → 17-е (пятница)', () => {
+    expect(nextPayday([19], '2026-04-01')).toEqual({ date: '2026-04-17', daysLeft: 16 });
+  });
+
+  it('перенос через границу месяца + сдвиг выходных', () => {
+    // today = пятница-зарплата 19 июня; следующая 19 июля = вс → 17 июля (пт)
+    expect(nextPayday([19], '2026-06-19')).toEqual({ date: '2026-07-17', daysLeft: 28 });
+  });
+
+  it('paydays=[10,25] — ближайший будний день', () => {
+    expect(nextPayday([10, 25], '2026-06-09')).toEqual({ date: '2026-06-10', daysLeft: 1 });
+  });
+
+  it('сегодня = день зарплаты → следующая дата, не сегодня', () => {
+    // today = 10 июня (зарплата); ожидаем следующую — 25 июня
+    expect(nextPayday([10, 25], '2026-06-10')).toEqual({ date: '2026-06-25', daysLeft: 15 });
+  });
+
+  it('день больше длины месяца → последний день месяца (с учётом выходных)', () => {
+    // payday 31, февраль 2026 (28 дней): 2026-02-28 — суббота → 2026-02-27 (пт)
+    expect(nextPayday([31], '2026-02-01')).toEqual({ date: '2026-02-27', daysLeft: 26 });
+  });
+});
+
+describe('§7.2 dailyBalance / §11 п.7 перевод', () => {
+  const data: DailyData = {
+    incomes: [
+      { user: 'him', date: '2026-06-01', source: 'salary', amount: 200000, to_daily: 200000, to_savings: 0, to_bills: 0 },
+    ],
+    transfers: [{ from_user: 'him', to_user: 'her', date: '2026-06-02', amount: 100000 }],
+    expenses: [{ user: 'him', date: '2026-06-03', amount: 30000 }],
+  };
+
+  it('перевод 100000 уменьшает у Него и увеличивает у Неё ровно на 100000', () => {
+    // him: 200000 − 100000 (перевод) − 30000 (трата) = 70000
+    expect(dailyBalance('him', data)).toBe(70000);
+    // her: +100000 (получила перевод)
+    expect(dailyBalance('her', data)).toBe(100000);
+  });
+
+  it('может уйти в минус', () => {
+    const d: DailyData = { incomes: [], transfers: [], expenses: [{ user: 'her', date: '2026-06-01', amount: 500 }] };
+    expect(dailyBalance('her', d)).toBe(-500);
+  });
+});
+
+describe('§7.3 perDay', () => {
+  it('округление вниз', () => {
+    expect(perDay(10000, 7)).toBe(1428); // 10000/7 = 1428.57…
+  });
+  it('отрицательный остаток → 0', () => {
+    expect(perDay(-500, 5)).toBe(0);
+  });
+});
+
+describe('§7.3 arcFill', () => {
+  it('обычный период: остаток / B0', () => {
+    const data: DailyData = {
+      incomes: [{ user: 'him', date: '2026-06-01', source: 'salary', amount: 10000, to_daily: 10000, to_savings: 0, to_bills: 0 }],
+      transfers: [],
+      expenses: [{ user: 'him', date: '2026-06-05', amount: 4000 }],
+    };
+    expect(arcFill('him', '2026-06-10', data)).toBeCloseTo(0.6, 5);
+  });
+
+  it('пополнение переводом после P → clamp до 1', () => {
+    const data: DailyData = {
+      incomes: [{ user: 'him', date: '2026-06-01', source: 'salary', amount: 10000, to_daily: 10000, to_savings: 0, to_bills: 0 }],
+      transfers: [{ from_user: 'her', to_user: 'him', date: '2026-06-10', amount: 5000 }],
+      expenses: [],
+    };
+    expect(arcFill('him', '2026-06-15', data)).toBe(1);
+  });
+
+  it('B0 = 0 (вся зарплата мимо повседневных) → 1 при положительном остатке', () => {
+    const data: DailyData = {
+      incomes: [{ user: 'him', date: '2026-06-01', source: 'salary', amount: 10000, to_daily: 0, to_savings: 10000, to_bills: 0 }],
+      transfers: [{ from_user: 'her', to_user: 'him', date: '2026-06-05', amount: 3000 }],
+      expenses: [],
+    };
+    expect(arcFill('him', '2026-06-10', data)).toBe(1);
+  });
+
+  it('пользователь без зарплат: 1 при положительном, 0 при неположительном', () => {
+    const positive: DailyData = {
+      incomes: [],
+      transfers: [{ from_user: 'her', to_user: 'him', date: '2026-06-05', amount: 3000 }],
+      expenses: [],
+    };
+    expect(arcFill('him', '2026-06-10', positive)).toBe(1);
+
+    const nonpositive: DailyData = {
+      incomes: [],
+      transfers: [],
+      expenses: [{ user: 'him', date: '2026-06-05', amount: 3000 }],
+    };
+    expect(arcFill('him', '2026-06-10', nonpositive)).toBe(0);
+  });
+});
+
+describe('§7.4 billStatus', () => {
+  const base = { month: '2026-06', today: '2026-06-10' as const };
+  it('оплачено', () => {
+    expect(billStatus({ dueDay: 5, hasPayment: true, ...base })).toBe('paid');
+  });
+  it('просрочен (due_day < сегодня)', () => {
+    expect(billStatus({ dueDay: 5, hasPayment: false, ...base })).toBe('overdue');
+  });
+  it('скоро срок (≤3 дня, включая сегодня)', () => {
+    expect(billStatus({ dueDay: 12, hasPayment: false, ...base })).toBe('due_soon');
+    expect(billStatus({ dueDay: 10, hasPayment: false, ...base })).toBe('due_soon');
+  });
+  it('предстоит', () => {
+    expect(billStatus({ dueDay: 25, hasPayment: false, ...base })).toBe('upcoming');
+  });
+  it('прошлый месяц без оплаты → просрочен', () => {
+    expect(billStatus({ dueDay: 25, hasPayment: false, month: '2026-05', today: '2026-06-10' })).toBe('overdue');
+  });
+  it('будущий месяц → предстоит', () => {
+    expect(billStatus({ dueDay: 1, hasPayment: false, month: '2026-07', today: '2026-06-10' })).toBe('upcoming');
+  });
+});
+
+describe('§7.5 savingsBalance', () => {
+  it('депозиты минус снятия', () => {
+    expect(
+      savingsBalance([
+        { type: 'deposit', date: '2026-06-01', amount: 50000 },
+        { type: 'withdrawal', date: '2026-06-05', amount: 8000 },
+        { type: 'deposit', date: '2026-06-10', amount: 2000 },
+      ]),
+    ).toBe(44000);
+  });
+});
