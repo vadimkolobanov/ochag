@@ -13,6 +13,8 @@ import { billsRoutes } from './routes/bills.js';
 import { stateRoutes } from './routes/state.js';
 import { settingsRoutes } from './routes/settings.js';
 import { categoriesRoutes } from './routes/categories.js';
+import { historyRoutes } from './routes/history.js';
+import { dataRoutes } from './routes/data.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -67,6 +69,8 @@ export async function buildApp(opts: { db: Db; code: string }): Promise<FastifyI
   await app.register(stateRoutes);
   await app.register(settingsRoutes);
   await app.register(categoriesRoutes);
+  await app.register(historyRoutes);
+  await app.register(dataRoutes);
 
   return app;
 }
