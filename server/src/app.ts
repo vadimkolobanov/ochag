@@ -5,6 +5,10 @@ import rateLimit from '@fastify/rate-limit';
 import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import type { Db } from './db.js';
+import { expensesRoutes } from './routes/expenses.js';
+import { incomesRoutes } from './routes/incomes.js';
+import { transfersRoutes } from './routes/transfers.js';
+import { savingsRoutes } from './routes/savings.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -50,6 +54,11 @@ export async function buildApp(opts: { db: Db; code: string }): Promise<FastifyI
       return { ok: true };
     },
   );
+
+  await app.register(expensesRoutes);
+  await app.register(incomesRoutes);
+  await app.register(transfersRoutes);
+  await app.register(savingsRoutes);
 
   return app;
 }
