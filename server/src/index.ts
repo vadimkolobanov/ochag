@@ -1,10 +1,34 @@
-// Точка входа Fastify: регистрация роутов, хук семейного кода (§7.6), раздача dist/ (ТЗ §3).
-// Реализуется на этапе B.
+// Точка входа: проверка OCHAG_CODE, инициализация БД, сборка приложения, раздача dist/ (ТЗ §3, §7.6).
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+import fastifyStatic from '@fastify/static';
+import { initDb } from './db.js';
+import { buildApp } from './app.js';
 
 const code = process.env.OCHAG_CODE;
 if (!code) {
-  console.error('OCHAG_CODE не задан — контейнер не может стартовать (ТЗ §7.6).');
+  console.error('OCHAG_CODE не задан — приложение не может стартовать (ТЗ §7.6).');
   process.exit(1);
 }
 
-export {};
+const db = initDb();
+const app = await buildApp({ db, code });
+
+// Раздача собранного фронта (если есть); SPA-fallback на index.html для не-API путей.
+const webDist = path.resolve('web/dist');
+if (existsSync(webDist)) {
+  await app.register(fastifyStatic, { root: webDist });
+  app.setNotFoundHandler((req, reply) => {
+    if (req.url.startsWith('/api/')) return reply.code(404).send({ error: 'Не найдено' });
+    return reply.sendFile('index.html');
+  });
+}
+
+const port = Number(process.env.PORT ?? 8088);
+try {
+  await app.listen({ port, host: '0.0.0.0' });
+  console.log(`Очаг слушает на :${port}`);
+} catch (err) {
+  console.error(err);
+  process.exit(1);
+}
