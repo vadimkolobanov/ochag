@@ -1,0 +1,33 @@
+# Развёртывание на VPS (ТЗ §3, §10): приложение + Caddy (HTTPS, Let's Encrypt).
+# Обязательные переменные окружения: OCHAG_CODE, OCHAG_DOMAIN.
+
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      OCHAG_CODE: ${OCHAG_CODE:?Задайте OCHAG_CODE}
+      TZ: Europe/Riga
+    volumes:
+      - ./data:/app/data
+    expose:
+      - "8088"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      OCHAG_DOMAIN: ${OCHAG_DOMAIN:?Задайте OCHAG_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

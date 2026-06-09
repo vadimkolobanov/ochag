@@ -1,0 +1,16 @@
+{
+  "name": "ochag",
+  "version": "1.0.0",
+  "private": true,
+  "description": "«Очаг» — семейный бюджет для двоих (PWA)",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm --workspace server run dev",
+    "dev:web": "npm --workspace web run dev",
+    "test": "npm --workspace server run test",
+    "build": "npm --workspace web run build"
+  }
+}

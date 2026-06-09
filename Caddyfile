@@ -1,0 +1,4 @@
+# Caddy reverse-proxy с автоматическим HTTPS. Домен берётся из переменной OCHAG_DOMAIN.
+{$OCHAG_DOMAIN} {
+	reverse_proxy app:8088
+}

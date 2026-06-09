@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+**/node_modules/
+
+# build output
+dist/
+web/dist/
+server/dist/
+
+# database & volume data
+data/*.sqlite
+data/*.sqlite-shm
+data/*.sqlite-wal
+data/pre-import-*.json
+data/ochag-backup-*.json
+
+# env & secrets
+.env
+.env.local
+*.local
+
+# logs & misc
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
