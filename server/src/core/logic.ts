@@ -111,6 +111,13 @@ export function nextPayday(
   return { date, daysLeft };
 }
 
+/** Является ли today днём зарплаты пользователя (с учётом сдвига выходных). */
+export function isPaydayToday(paydays: number[], today: string): boolean {
+  const [ty, tm] = today.split('-').map(Number);
+  const dim = daysInMonth(ty, tm);
+  return paydays.some((d) => shiftBackToWeekday(fmt(ty, tm, Math.min(d, dim))) === today);
+}
+
 // ── §7.2 dailyBalance ────────────────────────────────────────────────────────
 
 export function dailyBalance(user: User, data: DailyData): number {

@@ -10,6 +10,9 @@ import { incomesRoutes } from './routes/incomes.js';
 import { transfersRoutes } from './routes/transfers.js';
 import { savingsRoutes } from './routes/savings.js';
 import { billsRoutes } from './routes/bills.js';
+import { stateRoutes } from './routes/state.js';
+import { settingsRoutes } from './routes/settings.js';
+import { categoriesRoutes } from './routes/categories.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -61,6 +64,9 @@ export async function buildApp(opts: { db: Db; code: string }): Promise<FastifyI
   await app.register(transfersRoutes);
   await app.register(savingsRoutes);
   await app.register(billsRoutes);
+  await app.register(stateRoutes);
+  await app.register(settingsRoutes);
+  await app.register(categoriesRoutes);
 
   return app;
 }

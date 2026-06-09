@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   nextPayday,
+  isPaydayToday,
   dailyBalance,
   perDay,
   arcFill,
@@ -42,6 +43,19 @@ describe('§7.1 nextPayday', () => {
   it('день больше длины месяца → последний день месяца (с учётом выходных)', () => {
     // payday 31, февраль 2026 (28 дней): 2026-02-28 — суббота → 2026-02-27 (пт)
     expect(nextPayday([31], '2026-02-01')).toEqual({ date: '2026-02-27', daysLeft: 26 });
+  });
+});
+
+describe('isPaydayToday', () => {
+  it('будний день зарплаты → true', () => {
+    expect(isPaydayToday([10, 25], '2026-06-10')).toBe(true); // 10 июня — среда
+  });
+  it('не день зарплаты → false', () => {
+    expect(isPaydayToday([19], '2026-06-10')).toBe(false);
+  });
+  it('зарплата 19-е попадает на сб → день зарплаты сдвинут на пт 18-е', () => {
+    expect(isPaydayToday([19], '2026-09-19')).toBe(false); // суббота — не день
+    expect(isPaydayToday([19], '2026-09-18')).toBe(true); // пятница — день
   });
 });
 
