@@ -9,7 +9,7 @@ const TABLES = [
 export const dataRoutes: FastifyPluginAsync = async (app) => {
   async function dumpAll(): Promise<Record<string, unknown[]>> {
     const dump: Record<string, unknown[]> = {};
-    for (const t of TABLES) dump[t] = await app.db`SELECT * FROM ${app.db(t)}`;
+    for (const t of TABLES) dump[t] = [...await app.db`SELECT * FROM ${app.db(t)}`];
     return dump;
   }
 
