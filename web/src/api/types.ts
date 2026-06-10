@@ -90,3 +90,57 @@ export interface Settings {
   paydayHim: number[];
   paydayHer: number[];
 }
+
+/* ── История ─────────────────────────────────────────────────────── */
+
+export interface HistoryExpenseCategory {
+  categoryId: number;
+  name: string;
+  icon: string;
+  total: number;
+  count: number;
+  share: number;
+}
+
+export interface HistoryIncomeSource {
+  source: string;
+  total: number;
+  count: number;
+}
+
+export interface HistoryOperation {
+  type: 'expense' | 'income' | 'transfer' | 'savings';
+  id: number;
+  date: string;
+  amount: number;
+  // expense
+  user?: string;
+  comment?: string | null;
+  category?: string;
+  icon?: string;
+  // income
+  source?: string;
+  // transfer
+  fromUser?: string;
+  toUser?: string;
+  // savings
+  savingsType?: 'deposit' | 'withdrawal';
+  purpose?: string | null;
+  incomeId?: number | null;
+}
+
+export interface HistoryResponse {
+  month: string;
+  expensesTotal: number;
+  expensesByCategory: HistoryExpenseCategory[];
+  incomesBySource: HistoryIncomeSource[];
+  savings: { deposited: number; withdrawn: number; balance: number };
+  bills: {
+    totalCount: number;
+    paidCount: number;
+    paidSum: number;
+    plannedSum: number;
+    reservedSum: number;
+  };
+  operations: HistoryOperation[];
+}

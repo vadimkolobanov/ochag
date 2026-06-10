@@ -1,10 +1,11 @@
 import {
   ShoppingBasket, Bus, Coffee, Home, HeartPulse, Shirt, Paintbrush, CircleEllipsis,
+  Utensils, Car, Book, Music, Gift, Zap, Phone, Briefcase,
   type LucideIcon,
 } from 'lucide-react';
 import type { Category } from '../api/types';
 
-const ICON_MAP: Record<string, LucideIcon> = {
+export const ICON_MAP: Record<string, LucideIcon> = {
   'shopping-basket': ShoppingBasket,
   'bus': Bus,
   'coffee': Coffee,
@@ -13,9 +14,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'shirt': Shirt,
   'paintbrush': Paintbrush,
   'circle-ellipsis': CircleEllipsis,
+  'utensils': Utensils,
+  'car': Car,
+  'book': Book,
+  'music': Music,
+  'gift': Gift,
+  'zap': Zap,
+  'phone': Phone,
+  'briefcase': Briefcase,
 };
 
-function CategoryIcon({ name, size = 22 }: { name: string; size?: number }) {
+export const ICON_NAMES = Object.keys(ICON_MAP);
+
+export function CategoryIcon({ name, size = 22 }: { name: string; size?: number }) {
   const Icon = ICON_MAP[name] ?? CircleEllipsis;
   return <Icon size={size} strokeWidth={1.8} />;
 }
@@ -53,5 +64,3 @@ export function CategoryGrid({ categories, onSelect, disabled }: Props) {
     </div>
   );
 }
-
-export { CategoryIcon };
