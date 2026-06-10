@@ -54,7 +54,7 @@ export function BottomSheet({ open, onClose, children, title }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" style={{ maxWidth: '480px', left: '50%', transform: 'translateX(-50%)', right: 'auto', width: '100%' }}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end lg:items-center lg:justify-center">
       {/* Оверлей */}
       <div
         className="absolute inset-0 bg-black/40"
@@ -65,7 +65,7 @@ export function BottomSheet({ open, onClose, children, title }: Props) {
       {/* Лист */}
       <div
         ref={sheetRef}
-        className="relative bg-surface rounded-t-[24px] shadow-2xl transition-transform duration-200 safe-bottom"
+        className="relative bg-surface rounded-t-[24px] shadow-2xl transition-transform duration-200 safe-bottom w-full max-w-[480px] mx-auto lg:rounded-[24px] lg:max-w-[460px] lg:max-h-[88vh]"
         style={{ maxHeight: '92dvh', overflowY: 'auto' }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

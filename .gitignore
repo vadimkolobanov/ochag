@@ -6,6 +6,7 @@ node_modules/
 dist/
 web/dist/
 server/dist/
+*.tsbuildinfo
 
 # database & volume data
 data/*.sqlite

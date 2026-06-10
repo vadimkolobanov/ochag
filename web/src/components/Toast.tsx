@@ -44,8 +44,7 @@ interface ToastContainerProps {
 export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed bottom-20 left-0 right-0 z-50 flex flex-col gap-2 items-center px-4 pointer-events-none"
-      style={{ maxWidth: '480px', left: '50%', transform: 'translateX(-50%)', right: 'auto', width: '100%' }}>
+    <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 items-center px-4 pointer-events-none w-full max-w-[480px]">
       {toasts.map((t) => (
         <div
           key={t.id}

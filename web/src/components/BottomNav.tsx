@@ -11,7 +11,7 @@ const tabs = [
 export function BottomNav() {
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-[#E8E7E2] safe-bottom"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-[#E8E7E2] safe-bottom"
       style={{ maxWidth: '480px', margin: '0 auto', left: '50%', transform: 'translateX(-50%)', right: 'auto', width: '100%' }}
     >
       <div className="flex">

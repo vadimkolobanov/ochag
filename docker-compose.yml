@@ -2,8 +2,7 @@ services:
   app:
     build: .
     restart: unless-stopped
-    ports:
-      - "8088:8088"
+    network_mode: host
     environment:
       OCHAG_CODE: ${OCHAG_CODE}
       DATABASE_URL: ${DATABASE_URL}

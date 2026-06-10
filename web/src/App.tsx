@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BottomNav } from './components/BottomNav';
+import { Sidebar } from './components/Sidebar';
 import { useToast, ToastContainer } from './components/Toast';
 import { Auth } from './screens/Auth';
 import { ProfileSelect } from './screens/ProfileSelect';
@@ -50,8 +51,11 @@ function LoggedInApp({
 
   return (
     <BrowserRouter>
-      <div className="relative h-full bg-bg mx-auto overflow-hidden" style={{ maxWidth: '480px' }}>
-        <div className="h-full">
+      <div className="h-full bg-bg flex">
+        <Sidebar user={user} onSwitchUser={switchUser} onOpenQuickInput={openQuick} />
+
+        <main className="relative flex-1 h-full overflow-hidden">
+          <div className="h-full w-full max-w-[480px] mx-auto lg:max-w-[860px]">
           <Routes>
             <Route
               path="/"
@@ -70,21 +74,22 @@ function LoggedInApp({
             <Route path="/settings" element={<Settings showToast={showToast} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </div>
+          </div>
 
-        <BottomNav />
+          <BottomNav />
 
-        <button
-          onClick={() => openQuick('expense')}
-          className="fixed bottom-[72px] z-40 w-14 h-14 rounded-full bg-primary text-surface shadow-lg flex items-center justify-center text-[28px] font-light active:opacity-80 transition-opacity"
-          style={{
-            left: '50%',
-            transform: 'translateX(calc(-50% + 120px))',
-          }}
-          aria-label="Добавить"
-        >
-          +
-        </button>
+          <button
+            onClick={() => openQuick('expense')}
+            className="lg:hidden fixed bottom-[72px] z-40 w-14 h-14 rounded-full bg-primary text-surface shadow-lg flex items-center justify-center text-[28px] font-light active:opacity-80 transition-opacity"
+            style={{
+              left: '50%',
+              transform: 'translateX(calc(-50% + 120px))',
+            }}
+            aria-label="Добавить"
+          >
+            +
+          </button>
+        </main>
 
         <QuickInput
           open={quickOpen}
