@@ -33,7 +33,7 @@ export interface StateResponse {
   arcFill: number;
   upcomingBills: UpcomingBill[];
   recentExpenses: RecentExpense[];
-  savingsBalance: number;
+  savingsBalances: { RUB: number; EUR: number; USD: number };
   isPaydayToday: boolean;
 }
 
@@ -70,18 +70,21 @@ export interface BillsResponse {
   items: BillItem[];
 }
 
+export type SavingsCurrency = 'RUB' | 'EUR' | 'USD';
+
 export interface SavingsTx {
   id: number;
   type: 'deposit' | 'withdrawal';
   user: User;
   date: string;
   amount: number;
+  currency: SavingsCurrency;
   purpose: string | null;
   income_id: number | null;
 }
 
 export interface SavingsResponse {
-  balance: number;
+  balances: { RUB: number; EUR: number; USD: number };
   items: SavingsTx[];
 }
 
@@ -125,6 +128,7 @@ export interface HistoryOperation {
   toUser?: string;
   // savings
   savingsType?: 'deposit' | 'withdrawal';
+  currency?: SavingsCurrency;
   purpose?: string | null;
   incomeId?: number | null;
 }
@@ -134,7 +138,7 @@ export interface HistoryResponse {
   expensesTotal: number;
   expensesByCategory: HistoryExpenseCategory[];
   incomesBySource: HistoryIncomeSource[];
-  savings: { deposited: number; withdrawn: number; balance: number };
+  savings: { deposited: number; withdrawn: number; balances: { RUB: number; EUR: number; USD: number } };
   bills: {
     totalCount: number;
     paidCount: number;

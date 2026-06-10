@@ -119,10 +119,21 @@ export function seed(db: Db): void {
   }
 }
 
+/** Применить инкрементальные ALTER TABLE миграции (идемпотентно). */
+export function alterMigrate(db: Db): void {
+  const cols = (db.prepare('PRAGMA table_info(savings_tx)').all() as { name: string }[]).map(
+    (c) => c.name,
+  );
+  if (!cols.includes('currency')) {
+    db.exec(`ALTER TABLE savings_tx ADD COLUMN currency TEXT NOT NULL DEFAULT 'RUB'`);
+  }
+}
+
 /** Открыть БД, применить миграцию и сиды. Файл и схема создаются при первом старте. */
 export function initDb(path: string = DB_PATH): Db {
   const db = openDb(path);
   migrate(db);
+  alterMigrate(db);
   seed(db);
   return db;
 }

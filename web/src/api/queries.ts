@@ -232,7 +232,7 @@ export function usePatchObligation(month: string) {
 export function useAddSavingsTx() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: { type: 'deposit' | 'withdrawal'; user: User; date: string; amount: number; purpose?: string }) =>
+    mutationFn: (body: { type: 'deposit' | 'withdrawal'; user: User; date: string; amount: number; currency?: 'RUB' | 'EUR' | 'USD'; purpose?: string }) =>
       apiMutate<{ id: number }>('POST', '/api/savings/tx', body),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: keys.savings() });

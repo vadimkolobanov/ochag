@@ -7,7 +7,7 @@ import {
   nextPayday,
   isPaydayToday,
   billStatus,
-  savingsBalance,
+  savingsBalances,
   type DailyData,
   type SavingsTxRow,
   type IncomeRow,
@@ -44,7 +44,7 @@ export const stateRoutes: FastifyPluginAsync = async (app) => {
 
     const balance = dailyBalance(u, data);
     const payday = nextPayday(paydays, today);
-    const savingsRows = app.db.prepare('SELECT type, date, amount FROM savings_tx').all() as SavingsTxRow[];
+    const savingsRows = app.db.prepare('SELECT type, date, amount, currency FROM savings_tx').all() as SavingsTxRow[];
 
     // Ближайшие неоплаченные платежи текущего месяца (≤3).
     const month = today.slice(0, 7);
@@ -84,7 +84,7 @@ export const stateRoutes: FastifyPluginAsync = async (app) => {
       arcFill: arcFill(u, today, data),
       upcomingBills,
       recentExpenses,
-      savingsBalance: savingsBalance(savingsRows),
+      savingsBalances: savingsBalances(savingsRows),
       isPaydayToday: isPaydayToday(paydays, today),
     };
   });

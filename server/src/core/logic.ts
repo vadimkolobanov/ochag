@@ -28,10 +28,19 @@ export interface ExpenseRow {
   amount: number;
 }
 
+export type SavingsCurrency = 'RUB' | 'EUR' | 'USD';
+
 export interface SavingsTxRow {
   type: 'deposit' | 'withdrawal';
   date: string;
   amount: number;
+  currency?: SavingsCurrency; // optional: старые записи без поля считаются RUB
+}
+
+export interface SavingsBalances {
+  RUB: number;
+  EUR: number;
+  USD: number;
 }
 
 /** Записи движения денег, нужные для остатка повседневных одного пользователя. */
@@ -185,10 +194,18 @@ export function billStatus(args: {
 
 // ── §7.5 прочее ───────────────────────────────────────────────────────────────
 
+export function savingsBalances(txs: SavingsTxRow[]): SavingsBalances {
+  const bal: SavingsBalances = { RUB: 0, EUR: 0, USD: 0 };
+  for (const t of txs) {
+    const cur: SavingsCurrency = t.currency ?? 'RUB';
+    bal[cur] += t.type === 'deposit' ? t.amount : -t.amount;
+  }
+  return bal;
+}
+
+/** @deprecated Используй savingsBalances(). Оставлено для совместимости с тестами. */
 export function savingsBalance(txs: SavingsTxRow[]): number {
-  let balance = 0;
-  for (const t of txs) balance += t.type === 'deposit' ? t.amount : -t.amount;
-  return balance;
+  return savingsBalances(txs).RUB;
 }
 
 /** Элемент чек-листа месяца: плановая сумма обязательства + факт оплаты (если есть). */

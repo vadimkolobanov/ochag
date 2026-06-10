@@ -4,26 +4,56 @@ import { BottomSheet } from '../components/BottomSheet';
 import { Pinpad, pinpadToKopecks } from '../components/Pinpad';
 import { fmtMoney, fmtDateShort, todayStr } from '../utils/format';
 import { useSavings, useSettings, useAddSavingsTx, useDeleteSavingsTx } from '../api/queries';
-import type { User, SavingsTx } from '../api/types';
+import type { User, SavingsTx, SavingsCurrency } from '../api/types';
 
 interface Props {
   user: User;
   showToast: (msg: string, action?: { label: string; onClick: () => void }) => void;
 }
 
+const CURRENCY_SYMBOLS: Record<SavingsCurrency, string> = {
+  RUB: '₽',
+  EUR: '€',
+  USD: '$',
+};
+
+const CURRENCIES: SavingsCurrency[] = ['RUB', 'EUR', 'USD'];
+
+function CurrencyChips({
+  value,
+  onChange,
+}: {
+  value: SavingsCurrency;
+  onChange: (c: SavingsCurrency) => void;
+}) {
+  return (
+    <div className="flex gap-2 px-4 pb-3">
+      {CURRENCIES.map((c) => (
+        <button
+          key={c}
+          onClick={() => onChange(c)}
+          className={`h-9 px-4 rounded-btn font-semibold text-[15px] transition-colors active:opacity-70
+            ${value === c ? 'bg-primary text-surface' : 'bg-bg text-ink'}`}
+        >
+          {CURRENCY_SYMBOLS[c]}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function TxItem({
   tx,
-  currency,
   onDelete,
 }: {
   tx: SavingsTx;
-  currency: string;
   onDelete: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
   const canDelete = tx.income_id === null;
+  const sym = CURRENCY_SYMBOLS[tx.currency] ?? '₽';
 
   function startPress(e: React.PointerEvent) {
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
@@ -100,7 +130,7 @@ function TxItem({
         className="text-[15px] font-semibold tabnum"
         style={{ color: isDeposit ? 'var(--ok)' : 'var(--danger)' }}
       >
-        {isDeposit ? '+' : '−'}{fmtMoney(tx.amount, currency)}
+        {isDeposit ? '+' : '−'}{fmtMoney(tx.amount, sym)}
       </span>
     </div>
   );
@@ -111,20 +141,23 @@ export function Savings({ user, showToast }: Props) {
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [pinValue, setPinValue] = useState('');
   const [purpose, setPurpose] = useState('');
+  const [currency, setCurrency] = useState<SavingsCurrency>('RUB');
 
   const { data, isLoading, isError, refetch } = useSavings();
   const { data: settings } = useSettings();
-  const currency = settings?.currencySymbol ?? '₽';
+  const mainCurrency = settings?.currencySymbol ?? '₽';
   const addTx = useAddSavingsTx();
   const deleteTx = useDeleteSavingsTx();
 
-  function resetForm() { setPinValue(''); setPurpose(''); }
+  function resetForm() { setPinValue(''); setPurpose(''); setCurrency('RUB'); }
+
+  const activeSym = CURRENCY_SYMBOLS[currency];
 
   function handleDeposit() {
     const amt = pinpadToKopecks(pinValue);
     if (!amt) { showToast('Введите сумму'); return; }
     addTx.mutate(
-      { type: 'deposit', user, date: todayStr(), amount: amt },
+      { type: 'deposit', user, date: todayStr(), amount: amt, currency },
       {
         onSuccess: () => { setDepositOpen(false); resetForm(); showToast('Пополнено'); },
         onError: (e) => showToast(e instanceof Error ? e.message : 'Ошибка'),
@@ -137,7 +170,7 @@ export function Savings({ user, showToast }: Props) {
     if (!amt) { showToast('Введите сумму'); return; }
     if (!purpose.trim()) { showToast('Укажите цель снятия'); return; }
     addTx.mutate(
-      { type: 'withdrawal', user, date: todayStr(), amount: amt, purpose: purpose.trim() },
+      { type: 'withdrawal', user, date: todayStr(), amount: amt, currency, purpose: purpose.trim() },
       {
         onSuccess: () => { setWithdrawOpen(false); resetForm(); showToast('Снято'); },
         onError: (e) => showToast(e instanceof Error ? e.message : 'Ошибка'),
@@ -166,18 +199,28 @@ export function Savings({ user, showToast }: Props) {
         </div>
       ) : data ? (
         <>
-          {/* Balance */}
-          <div className="flex flex-col items-center py-6 gap-1">
-            <div className="flex items-center gap-2 mb-1">
+          {/* Balances */}
+          <div className="flex flex-col items-center py-5 gap-3">
+            <div className="flex items-center gap-2">
               <PiggyBank size={18} style={{ color: 'var(--amber)' }} />
               <span className="text-[12px] font-bold text-muted uppercase tracking-wide">Накоплено</span>
             </div>
-            <span
-              className="text-[44px] font-bold tabnum leading-tight"
-              style={{ color: 'var(--amber)' }}
-            >
-              {fmtMoney(data.balance, currency)}
-            </span>
+            <div className="flex flex-col items-center gap-1">
+              {CURRENCIES.map((cur) => {
+                const bal = data.balances[cur];
+                const sym = cur === 'RUB' ? mainCurrency : CURRENCY_SYMBOLS[cur];
+                if (bal === 0 && cur !== 'RUB') return null;
+                return (
+                  <span
+                    key={cur}
+                    className={`tabnum font-bold leading-tight ${cur === 'RUB' ? 'text-[44px]' : 'text-[28px]'}`}
+                    style={{ color: 'var(--amber)' }}
+                  >
+                    {fmtMoney(bal, sym)}
+                  </span>
+                );
+              })}
+            </div>
           </div>
 
           {/* Action buttons */}
@@ -209,7 +252,6 @@ export function Savings({ user, showToast }: Props) {
                   <TxItem
                     key={tx.id}
                     tx={tx}
-                    currency={currency}
                     onDelete={() =>
                       deleteTx.mutate(tx.id, {
                         onSuccess: () => showToast('Удалено'),
@@ -226,7 +268,8 @@ export function Savings({ user, showToast }: Props) {
 
       {/* Deposit sheet */}
       <BottomSheet open={depositOpen} onClose={() => setDepositOpen(false)} title="Пополнить копилку">
-        <Pinpad value={pinValue} onChange={setPinValue} currency={currency} />
+        <CurrencyChips value={currency} onChange={(c) => { setCurrency(c); setPinValue(''); }} />
+        <Pinpad value={pinValue} onChange={setPinValue} currency={activeSym} />
         <div className="px-4 pb-8 pt-2">
           <button
             onClick={handleDeposit}
@@ -240,7 +283,8 @@ export function Savings({ user, showToast }: Props) {
 
       {/* Withdraw sheet */}
       <BottomSheet open={withdrawOpen} onClose={() => setWithdrawOpen(false)} title="Снять из копилки">
-        <Pinpad value={pinValue} onChange={setPinValue} currency={currency} />
+        <CurrencyChips value={currency} onChange={(c) => { setCurrency(c); setPinValue(''); }} />
+        <Pinpad value={pinValue} onChange={setPinValue} currency={activeSym} />
         <div className="px-4 pb-8 pt-2 space-y-3">
           <input
             type="text"

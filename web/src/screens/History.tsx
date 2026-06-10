@@ -240,11 +240,20 @@ export function History({ user, showToast }: Props) {
                     </span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-[#F0EFE9]">
+                <div className="pt-2 border-t border-[#F0EFE9] space-y-1">
                   <span className="text-[14px] font-bold text-ink">Итого в копилке</span>
-                  <span className="text-[14px] font-bold tabnum" style={{ color: 'var(--amber)' }}>
-                    {fmtMoney(data.savings.balance, currency)}
-                  </span>
+                  {([['RUB', currency], ['EUR', '€'], ['USD', '$']] as [string, string][]).map(([cur, sym]) => {
+                    const bal = data.savings.balances[cur as 'RUB' | 'EUR' | 'USD'];
+                    if (bal === 0) return null;
+                    return (
+                      <div key={cur} className="flex justify-between">
+                        <span className="text-[13px] text-muted">{sym}</span>
+                        <span className="text-[14px] font-bold tabnum" style={{ color: 'var(--amber)' }}>
+                          {fmtMoney(bal, sym)}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

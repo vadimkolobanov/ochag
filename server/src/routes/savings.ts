@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { savingsBalance, type SavingsTxRow } from '../core/logic.js';
+import { savingsBalances, type SavingsTxRow, type SavingsCurrency } from '../core/logic.js';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Неверная дата');
 const user = z.enum(['him', 'her']);
@@ -11,6 +11,7 @@ const bodySchema = z
     user,
     date: dateStr,
     amount: z.number().int().positive('Сумма должна быть больше нуля'),
+    currency: z.enum(['RUB', 'EUR', 'USD']).optional().default('RUB'),
     purpose: z.string().optional(),
   })
   .refine((b) => b.type !== 'withdrawal' || (b.purpose != null && b.purpose.trim() !== ''), {
@@ -22,14 +23,15 @@ interface SavingsItem extends SavingsTxRow {
   user: string;
   purpose: string | null;
   income_id: number | null;
+  currency: SavingsCurrency;
 }
 
 export const savingsRoutes: FastifyPluginAsync = async (app) => {
   app.get('/api/savings', async () => {
     const items = app.db
-      .prepare('SELECT id, type, user, date, amount, purpose, income_id FROM savings_tx ORDER BY date DESC, id DESC')
+      .prepare('SELECT id, type, user, date, amount, purpose, income_id, currency FROM savings_tx ORDER BY date DESC, id DESC')
       .all() as SavingsItem[];
-    return { balance: savingsBalance(items), items };
+    return { balances: savingsBalances(items), items };
   });
 
   app.post('/api/savings/tx', async (req, reply) => {
@@ -37,8 +39,8 @@ export const savingsRoutes: FastifyPluginAsync = async (app) => {
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.issues[0].message });
     const b = parsed.data;
     const info = app.db
-      .prepare('INSERT INTO savings_tx (type, user, date, amount, purpose) VALUES (?, ?, ?, ?, ?)')
-      .run(b.type, b.user, b.date, b.amount, b.purpose ?? null);
+      .prepare('INSERT INTO savings_tx (type, user, date, amount, currency, purpose) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(b.type, b.user, b.date, b.amount, b.currency, b.purpose ?? null);
     return reply.code(201).send({ id: Number(info.lastInsertRowid) });
   });
 

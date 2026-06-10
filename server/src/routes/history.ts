@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { billsSummary, savingsBalance, type BillItem, type SavingsTxRow } from '../core/logic.js';
+import { billsSummary, savingsBalances, type BillItem, type SavingsTxRow } from '../core/logic.js';
 
 const monthStr = z.string().regex(/^\d{4}-\d{2}$/, 'Неверный месяц');
 
@@ -35,7 +35,7 @@ export const historyRoutes: FastifyPluginAsync = async (app) => {
       .all(month) as { source: string; total: number; count: number }[];
 
     // Движение копилки за месяц + итоговый остаток (всё время).
-    const savRows = app.db.prepare('SELECT type, date, amount FROM savings_tx').all() as SavingsTxRow[];
+    const savRows = app.db.prepare('SELECT type, date, amount, currency FROM savings_tx').all() as SavingsTxRow[];
     const monthSav = savRows.filter((r) => r.date.slice(0, 7) === month);
     const deposited = monthSav.filter((r) => r.type === 'deposit').reduce((s, r) => s + r.amount, 0);
     const withdrawn = monthSav.filter((r) => r.type === 'withdrawal').reduce((s, r) => s + r.amount, 0);
@@ -74,7 +74,7 @@ export const historyRoutes: FastifyPluginAsync = async (app) => {
       .all(month) as any[])
       operations.push({ type: 'transfer', ...t });
     for (const s of app.db
-      .prepare(`SELECT id, date, amount, type AS savingsType, user, purpose, income_id AS incomeId FROM savings_tx WHERE ${M().p}`)
+      .prepare(`SELECT id, date, amount, currency, type AS savingsType, user, purpose, income_id AS incomeId FROM savings_tx WHERE ${M().p}`)
       .all(month) as any[])
       operations.push({ type: 'savings', ...s });
     operations.sort((a, b) => String(b.date).localeCompare(String(a.date)));
@@ -84,7 +84,7 @@ export const historyRoutes: FastifyPluginAsync = async (app) => {
       expensesTotal,
       expensesByCategory,
       incomesBySource,
-      savings: { deposited, withdrawn, balance: savingsBalance(savRows) },
+      savings: { deposited, withdrawn, balances: savingsBalances(savRows) },
       bills: billsSummary(billItems, reserved),
       operations,
     };
