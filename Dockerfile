@@ -1,4 +1,4 @@
-# Stage 1: сборка (нужны python3/gcc/make для компиляции better-sqlite3)
+# Stage 1: сборка
 FROM node:20-alpine AS build
 RUN apk add --no-cache python3 make g++
 WORKDIR /app
@@ -10,16 +10,14 @@ COPY server/ ./server/
 COPY web/ ./web/
 RUN npm --workspace web run build && npm --workspace server run build
 
-# Stage 2: продакшн-образ (без компилятора; берём скомпилированные бинари из build)
+# Stage 2: продакшн
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# Копируем скомпилированные node_modules (включая нативные бинари better-sqlite3)
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
 COPY --from=build /app/server/package.json ./server/
 COPY --from=build /app/server/dist ./server/dist
 COPY --from=build /app/web/dist ./web/dist
-RUN mkdir -p /app/data
 EXPOSE 8088
 CMD ["node", "server/dist/index.js"]

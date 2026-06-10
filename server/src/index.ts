@@ -1,4 +1,3 @@
-// Точка входа: проверка OCHAG_CODE, инициализация БД, сборка приложения, раздача dist/ (ТЗ §3, §7.6).
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import fastifyStatic from '@fastify/static';
@@ -7,14 +6,13 @@ import { buildApp } from './app.js';
 
 const code = process.env.OCHAG_CODE;
 if (!code) {
-  console.error('OCHAG_CODE не задан — приложение не может стартовать (ТЗ §7.6).');
+  console.error('OCHAG_CODE не задан — приложение не может стартовать.');
   process.exit(1);
 }
 
-const db = initDb();
+const db = await initDb();
 const app = await buildApp({ db, code });
 
-// Раздача собранного фронта (если есть); SPA-fallback на index.html для не-API путей.
 const webDist = path.resolve('web/dist');
 if (existsSync(webDist)) {
   await app.register(fastifyStatic, { root: webDist });

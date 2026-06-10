@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import type { Db } from '../db.js';
+import type { Sql } from '../db.js';
 
 export interface AppSettings {
   currencySymbol: string;
@@ -8,9 +8,8 @@ export interface AppSettings {
   paydayHer: number[];
 }
 
-/** Читает настройки из таблицы settings (ТЗ §5). */
-export function readSettings(db: Db): AppSettings {
-  const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
+export async function readSettings(sql: Sql): Promise<AppSettings> {
+  const rows = await sql<{ key: string; value: string }[]>`SELECT key, value FROM settings`;
   const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
   return {
     currencySymbol: map.currency_symbol ?? '₽',
@@ -34,14 +33,14 @@ export const settingsRoutes: FastifyPluginAsync = async (app) => {
     const p = bodySchema.safeParse(req.body);
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0].message });
     const b = p.data;
-    const upsert = app.db.prepare(
-      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-    );
-    app.db.transaction(() => {
-      upsert.run('currency_symbol', b.currencySymbol);
-      upsert.run('payday_him', JSON.stringify(b.paydayHim));
-      upsert.run('payday_her', JSON.stringify(b.paydayHer));
-    })();
+    await app.db.begin(async (sql) => {
+      await sql`INSERT INTO settings (key, value) VALUES ('currency_symbol', ${b.currencySymbol})
+        ON CONFLICT (key) DO UPDATE SET value = excluded.value`;
+      await sql`INSERT INTO settings (key, value) VALUES ('payday_him', ${JSON.stringify(b.paydayHim)})
+        ON CONFLICT (key) DO UPDATE SET value = excluded.value`;
+      await sql`INSERT INTO settings (key, value) VALUES ('payday_her', ${JSON.stringify(b.paydayHer)})
+        ON CONFLICT (key) DO UPDATE SET value = excluded.value`;
+    });
     return readSettings(app.db);
   });
 };

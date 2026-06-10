@@ -6,5 +6,5 @@ services:
       - "8088:8088"
     environment:
       OCHAG_CODE: ${OCHAG_CODE}
-      OCHAG_DB: /app/data/ochag.sqlite
+      DATABASE_URL: ${DATABASE_URL}
       TZ: Europe/Moscow

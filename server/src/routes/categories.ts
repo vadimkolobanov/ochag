@@ -1,19 +1,11 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
-interface CategoryRow {
-  id: number;
-  name: string;
-  icon: string;
-  sort: number;
-  is_active: number;
-}
-
 export const categoriesRoutes: FastifyPluginAsync = async (app) => {
   app.get('/api/categories', async () => {
-    return app.db
-      .prepare('SELECT id, name, icon, sort, is_active FROM categories WHERE is_active = 1 ORDER BY sort, id')
-      .all() as CategoryRow[];
+    return app.db`
+      SELECT id, name, icon, sort, is_active
+      FROM categories WHERE is_active = 1 ORDER BY sort, id`;
   });
 
   const createBody = z.object({
@@ -26,13 +18,12 @@ export const categoriesRoutes: FastifyPluginAsync = async (app) => {
     const p = createBody.safeParse(req.body);
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0].message });
     const b = p.data;
-    const sort =
-      b.sort ??
-      ((app.db.prepare('SELECT COALESCE(MAX(sort), -1) + 1 AS n FROM categories').get() as { n: number }).n);
-    const info = app.db
-      .prepare('INSERT INTO categories (name, icon, sort) VALUES (?, ?, ?)')
-      .run(b.name, b.icon, sort);
-    return reply.code(201).send({ id: Number(info.lastInsertRowid) });
+    const sort = b.sort ?? (
+      await app.db<[{ n: number }]>`SELECT COALESCE(MAX(sort), -1) + 1 AS n FROM categories`
+    )[0].n;
+    const [{ id }] = await app.db<[{ id: number }]>`
+      INSERT INTO categories (name, icon, sort) VALUES (${b.name}, ${b.icon}, ${sort}) RETURNING id`;
+    return reply.code(201).send({ id });
   });
 
   const patchBody = z.object({
@@ -49,17 +40,15 @@ export const categoriesRoutes: FastifyPluginAsync = async (app) => {
     if (!p.success) return reply.code(400).send({ error: p.error.issues[0].message });
     const b = p.data;
 
-    const sets: string[] = [];
-    const vals: unknown[] = [];
-    if (b.name !== undefined) { sets.push('name = ?'); vals.push(b.name); }
-    if (b.icon !== undefined) { sets.push('icon = ?'); vals.push(b.icon); }
-    if (b.sort !== undefined) { sets.push('sort = ?'); vals.push(b.sort); }
-    if (b.isActive !== undefined) { sets.push('is_active = ?'); vals.push(b.isActive ? 1 : 0); }
-    if (sets.length === 0) return reply.code(400).send({ error: 'Нечего обновлять' });
+    const updates: Record<string, unknown> = {};
+    if (b.name !== undefined) updates.name = b.name;
+    if (b.icon !== undefined) updates.icon = b.icon;
+    if (b.sort !== undefined) updates.sort = b.sort;
+    if (b.isActive !== undefined) updates.is_active = b.isActive ? 1 : 0;
+    if (Object.keys(updates).length === 0) return reply.code(400).send({ error: 'Нечего обновлять' });
 
-    vals.push(id.data);
-    const info = app.db.prepare(`UPDATE categories SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
-    if (info.changes === 0) return reply.code(404).send({ error: 'Категория не найдена' });
+    const result = await app.db`UPDATE categories SET ${app.db(updates)} WHERE id = ${id.data}`;
+    if (result.count === 0) return reply.code(404).send({ error: 'Категория не найдена' });
     return { ok: true };
   });
 };

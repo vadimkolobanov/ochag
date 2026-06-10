@@ -1,10 +1,8 @@
-// Сборка Fastify-приложения: хук семейного кода (§7.6), auth/check, регистрация роутов.
-// Вынесено отдельно от index.ts, чтобы тестировать через app.inject() без реального сервера.
 import Fastify, { type FastifyInstance } from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import { timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
-import type { Db } from './db.js';
+import type { Sql } from './db.js';
 import { expensesRoutes } from './routes/expenses.js';
 import { incomesRoutes } from './routes/incomes.js';
 import { transfersRoutes } from './routes/transfers.js';
@@ -18,11 +16,10 @@ import { dataRoutes } from './routes/data.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    db: Db;
+    db: Sql;
   }
 }
 
-/** Сравнение строк за постоянное время (защита кода доступа от тайминг-атак). */
 function safeEqual(a: string, b: string): boolean {
   const ab = Buffer.from(a, 'utf8');
   const bb = Buffer.from(b, 'utf8');
@@ -30,13 +27,12 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ab, bb);
 }
 
-export async function buildApp(opts: { db: Db; code: string }): Promise<FastifyInstance> {
+export async function buildApp(opts: { db: Sql; code: string }): Promise<FastifyInstance> {
   const app = Fastify({ logger: false });
   app.decorate('db', opts.db);
 
   await app.register(rateLimit, { global: false });
 
-  // §7.6: все /api/* кроме /api/auth/check требуют верный заголовок x-ochag-code.
   app.addHook('onRequest', async (req, reply) => {
     const url = req.url.split('?')[0];
     if (!url.startsWith('/api/') || url === '/api/auth/check') return;
@@ -47,7 +43,6 @@ export async function buildApp(opts: { db: Db; code: string }): Promise<FastifyI
     }
   });
 
-  // §7.6: проверка кода, rate-limit 5 попыток/мин с IP.
   app.post(
     '/api/auth/check',
     { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } },
