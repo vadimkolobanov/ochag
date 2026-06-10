@@ -6,7 +6,6 @@ import { CategoryIcon } from '../components/CategoryGrid';
 import { fmtMoney, fmtDateShort, todayStr } from '../utils/format';
 import { useAppState, useDeleteExpense } from '../api/queries';
 import type { User, RecentExpense, UpcomingBill } from '../api/types';
-import { USER_KEY } from '../api/client';
 
 interface Props {
   user: User;

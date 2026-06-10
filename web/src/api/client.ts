@@ -34,7 +34,7 @@ export async function apiGet<T>(path: string): Promise<T> {
 
 /** POST/PATCH/DELETE с телом */
 export async function apiMutate<T>(
-  method: 'POST' | 'PATCH' | 'DELETE',
+  method: 'POST' | 'PATCH' | 'DELETE' | 'PUT',
   path: string,
   body?: unknown,
 ): Promise<T> {

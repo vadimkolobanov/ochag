@@ -327,7 +327,6 @@ function TransferTab({
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayStr());
   // По умолчанию направление от текущего пользователя к другому
-  const other: User = user === 'him' ? 'her' : 'him';
   const [fromUser, setFromUser] = useState<User>(user);
   const toUser: User = fromUser === 'him' ? 'her' : 'him';
 

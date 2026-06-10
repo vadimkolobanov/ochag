@@ -34,8 +34,8 @@ function LoggedInApp({
   user: User;
   switchUser: () => void;
   showToast: (msg: string, action?: { label: string; onClick: () => void }) => void;
-  dismissToast: (id: string) => void;
-  toasts: Array<{ id: string; msg: string; action?: { label: string; onClick: () => void } }>;
+  dismissToast: (id: number) => void;
+  toasts: Array<{ id: number; message: string; action?: { label: string; onClick: () => void } }>;
 }) {
   const [quickOpen, setQuickOpen] = useState(false);
   const [quickTab, setQuickTab] = useState<QuickTab>('expense');
