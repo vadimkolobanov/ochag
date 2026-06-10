@@ -5,11 +5,6 @@ services:
     ports:
       - "8088:8088"
     environment:
-      OCHAG_CODE: ${OCHAG_CODE:?Задайте OCHAG_CODE в .env}
+      OCHAG_CODE: ${OCHAG_CODE}
       OCHAG_DB: /app/data/ochag.sqlite
       TZ: Europe/Moscow
-    volumes:
-      - db_data:/app/data
-
-volumes:
-  db_data:
