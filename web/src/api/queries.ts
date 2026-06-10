@@ -134,7 +134,7 @@ export function useDeleteIncome() {
   });
 }
 
-export function useAddTransfer(user: User) {
+export function useAddTransfer(_user: User) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: {
