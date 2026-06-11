@@ -13,6 +13,7 @@ import { settingsRoutes } from './routes/settings.js';
 import { categoriesRoutes } from './routes/categories.js';
 import { historyRoutes } from './routes/history.js';
 import { dataRoutes } from './routes/data.js';
+import { creditsRoutes } from './routes/credits.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -66,6 +67,7 @@ export async function buildApp(opts: { db: Sql; code: string }): Promise<Fastify
   await app.register(categoriesRoutes);
   await app.register(historyRoutes);
   await app.register(dataRoutes);
+  await app.register(creditsRoutes);
 
   return app;
 }

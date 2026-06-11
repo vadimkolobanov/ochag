@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 
 const TABLES = [
-  'settings', 'categories', 'obligations', 'incomes',
+  'settings', 'categories', 'obligations', 'credits', 'incomes',
   'expenses', 'transfers', 'savings_tx', 'obligation_payments',
 ] as const;
 

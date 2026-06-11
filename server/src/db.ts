@@ -78,6 +78,21 @@ CREATE TABLE IF NOT EXISTS obligation_payments (
   UNIQUE (obligation_id, month)
 );
 
+CREATE TABLE IF NOT EXISTS credits (
+  id SERIAL PRIMARY KEY,
+  obligation_id INTEGER NOT NULL UNIQUE REFERENCES obligations(id),
+  bank TEXT NOT NULL,
+  contract_number TEXT,
+  opened_date TEXT,
+  purpose TEXT,
+  principal INTEGER NOT NULL CHECK (principal > 0),
+  total_payout INTEGER NOT NULL CHECK (total_payout >= principal),
+  months_total INTEGER NOT NULL CHECK (months_total > 0),
+  payments_before INTEGER NOT NULL DEFAULT 0 CHECK (payments_before >= 0),
+  rate_percent REAL,
+  CHECK (payments_before <= months_total)
+);
+
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
 CREATE INDEX IF NOT EXISTS idx_savings_date ON savings_tx(date);

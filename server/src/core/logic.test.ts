@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  creditCalc,
   nextPayday,
   isPaydayToday,
   dailyBalance,
@@ -184,5 +185,81 @@ describe('§7.5 savingsBalance', () => {
         { type: 'deposit', date: '2026-06-10', amount: 2000 },
       ]),
     ).toBe(44000);
+  });
+});
+
+// ── §v1.1 creditCalc ─────────────────────────────────────────────────────────
+// Базовые числа: взяли 300 000 ₽ = 30_000_000 коп, вернуть 390 000 ₽ = 39_000_000 коп,
+// 36 платежей по 10 833 ₽ = 1_083_300 коп.
+
+const BASE = {
+  monthly: 1_083_300,
+  principal: 30_000_000,
+  totalPayout: 39_000_000,
+  monthsTotal: 36,
+};
+
+describe('§v1.1 creditCalc', () => {
+  it('обычный кредит в середине срока (10 оплачено, текущий ещё не оплачен)', () => {
+    const paidTx = Array(10).fill(1_083_300);
+    const r = creditCalc({ ...BASE, paymentsBefore: 0, paidTx, paidThisMonth: false }, '2026-06');
+    expect(r.paymentsMade).toBe(10);
+    expect(r.paymentsLeft).toBe(26);
+    expect(r.paidSum).toBe(10 * 1_083_300);
+    expect(r.leftToPay).toBe(39_000_000 - 10 * 1_083_300);
+    expect(r.overpay).toBe(9_000_000);
+    expect(r.progress).toBeCloseTo(10 / 36, 5);
+    // текущий месяц не оплачен → он первый из оставшихся, последний = 2026-06 + 25 = 2028-07
+    expect(r.closeMonth).toBe('2028-07');
+  });
+
+  it('кредит с payments_before > 0', () => {
+    const paidTx = Array(4).fill(1_083_300);
+    const r = creditCalc({ ...BASE, paymentsBefore: 10, paidTx, paidThisMonth: false }, '2026-06');
+    expect(r.paymentsMade).toBe(14);
+    expect(r.paymentsLeft).toBe(22);
+    expect(r.paidSum).toBe(14 * 1_083_300);
+    // последний платёж = 2026-06 + 21 месяц = 2028-03
+    expect(r.closeMonth).toBe('2028-03');
+  });
+
+  it('полностью выплаченный кредит: paymentsLeft = 0, progress = 1, closeMonth = null', () => {
+    const paidTx = Array(36).fill(1_083_300);
+    const r = creditCalc({ ...BASE, paymentsBefore: 0, paidTx, paidThisMonth: true }, '2026-06');
+    expect(r.paymentsMade).toBe(36);
+    expect(r.paymentsLeft).toBe(0);
+    expect(r.progress).toBe(1);
+    expect(r.closeMonth).toBeNull();
+  });
+
+  it('фактические оплаты отличаются от плановой суммы → paidSum по фактам', () => {
+    const paidTx = [1_100_000, 950_000]; // не кратно monthly
+    const r = creditCalc({ ...BASE, paymentsBefore: 0, paidTx, paidThisMonth: false }, '2026-06');
+    expect(r.paidSum).toBe(1_100_000 + 950_000); // 2 050 000, не 2*1_083_300
+    expect(r.leftToPay).toBe(39_000_000 - (1_100_000 + 950_000));
+  });
+
+  it('текущий месяц ещё не оплачен vs уже оплачен → closeMonth совпадает', () => {
+    // Семантически одинаковая картина: всего внесено 11 платежей, осталось 25
+    const notPaid = creditCalc(
+      { ...BASE, paymentsBefore: 0, paidTx: Array(10).fill(1_083_300), paidThisMonth: false },
+      '2026-06',
+    );
+    const paid = creditCalc(
+      { ...BASE, paymentsBefore: 0, paidTx: Array(11).fill(1_083_300), paidThisMonth: true },
+      '2026-06',
+    );
+    // Оба случая: кредит закрывается в одном и том же месяце
+    expect(notPaid.closeMonth).toBe(paid.closeMonth);
+    expect(notPaid.closeMonth).toBe('2028-07');
+  });
+
+  it('переплата 0: total_payout = principal', () => {
+    const r = creditCalc(
+      { ...BASE, totalPayout: 30_000_000, principal: 30_000_000,
+        paymentsBefore: 0, paidTx: [], paidThisMonth: false },
+      '2026-06',
+    );
+    expect(r.overpay).toBe(0);
   });
 });

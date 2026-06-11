@@ -222,6 +222,57 @@ export interface BillsSummary {
   reservedSum: number;
 }
 
+// ── §v1.1 Кредиты ────────────────────────────────────────────────────────────
+
+/** Сдвинуть месяц 'YYYY-MM' на n месяцев вперёд (без new Date() без аргументов). */
+function addMonths(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  const total = y * 12 + (m - 1) + n;
+  const ry = Math.floor(total / 12);
+  const rm = (total % 12) + 1;
+  return `${ry}-${String(rm).padStart(2, '0')}`;
+}
+
+export interface CreditInfo {
+  monthly: number;         // default_amount обязательства (копейки)
+  principal: number;       // тело кредита (копейки)
+  totalPayout: number;     // всего вернуть по договору (копейки)
+  monthsTotal: number;     // плановый срок в платежах
+  paymentsBefore: number;  // платежей внесено до начала учёта в «Очаге»
+  paidTx: number[];        // суммы obligation_payments (копейки); текущий месяц включён если уже оплачен
+  paidThisMonth: boolean;  // оплачен ли платёж текущего месяца (нужен для правильного closeMonth)
+}
+
+export interface CreditCalc {
+  paymentsMade: number;      // paymentsBefore + paidTx.length
+  paymentsLeft: number;      // max(0, monthsTotal − paymentsMade)
+  paidSum: number;           // paymentsBefore*monthly + Σ paidTx (по фактическим суммам)
+  leftToPay: number;         // max(0, totalPayout − paidSum)
+  overpay: number;           // totalPayout − principal
+  progress: number;          // clamp(paymentsMade / monthsTotal, 0, 1)
+  closeMonth: string | null; // 'YYYY-MM' последнего платежа; null если paymentsLeft = 0
+}
+
+export function creditCalc(c: CreditInfo, todayMonth: string): CreditCalc {
+  const paymentsMade = c.paymentsBefore + c.paidTx.length;
+  const paymentsLeft = Math.max(0, c.monthsTotal - paymentsMade);
+  const paidSum = c.paymentsBefore * c.monthly + c.paidTx.reduce((s, x) => s + x, 0);
+  const leftToPay = Math.max(0, c.totalPayout - paidSum);
+  const overpay = c.totalPayout - c.principal;
+  const progress = c.monthsTotal > 0 ? clamp(paymentsMade / c.monthsTotal, 0, 1) : 1;
+
+  let closeMonth: string | null = null;
+  if (paymentsLeft > 0) {
+    // Если текущий месяц НЕ оплачен — он считается первым из оставшихся,
+    // последний платёж = todayMonth + (paymentsLeft − 1) месяцев.
+    // Если уже оплачен — осталось ещё paymentsLeft месяцев от todayMonth.
+    const offset = c.paidThisMonth ? paymentsLeft : paymentsLeft - 1;
+    closeMonth = addMonths(todayMonth, offset);
+  }
+
+  return { paymentsMade, paymentsLeft, paidSum, leftToPay, overpay, progress, closeMonth };
+}
+
 /**
  * Сводка «Платежи месяца» (ТЗ §7.5).
  * reservedSum — Σ incomes.to_bills доходов с датой в месяце M; никуда не переносится (информационно).
