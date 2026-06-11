@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Settings2, X } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
 import { fmtMoney, fmtMonthName, prevMonth, nextMonth, monthStr, todayStr } from '../utils/format';
 import {
-  useBills, useSettings, usePayObligation, usePatchObligationPay,
+  useBills, useCredits, useSettings, usePayObligation, usePatchObligationPay,
   useUnpayObligation, useAddObligation, usePatchObligation,
 } from '../api/queries';
 import type { User, BillItem } from '../api/types';
@@ -51,6 +52,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (m: strin
 }
 
 export function Bills({ user, showToast }: Props) {
+  const navigate = useNavigate();
   const [month, setMonth] = useState(monthStr);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [payAmt, setPayAmt] = useState('');
@@ -65,6 +67,7 @@ export function Bills({ user, showToast }: Props) {
   const [oblOwner, setOblOwner] = useState<User>(user);
 
   const { data, isLoading, isError, refetch } = useBills(month);
+  const { data: creditsData } = useCredits();
   const { data: settings } = useSettings();
   const currency = settings?.currencySymbol ?? '₽';
 
@@ -204,6 +207,22 @@ export function Bills({ user, showToast }: Props) {
                 {' · '}{fmtMoney(data.summary.paidSum, currency)} из плановых {fmtMoney(data.summary.plannedSum, currency)}
                 {data.summary.reservedSum > 0 && ` · отложено ${fmtMoney(data.summary.reservedSum, currency)}`}
               </p>
+            </div>
+          )}
+
+          {/* Credits entry card */}
+          {creditsData && creditsData.summary.count > 0 && (
+            <div className="mx-4 mb-3">
+              <button
+                onClick={() => navigate('/credits')}
+                className="w-full h-12 bg-surface rounded-card shadow-card flex items-center justify-between px-4 active:opacity-70 transition-opacity"
+              >
+                <span className="text-[15px] font-medium text-ink">Кредиты</span>
+                <span className="flex items-center gap-1 text-[14px] text-muted">
+                  осталось выплатить{'\u00A0'}{fmtMoney(creditsData.summary.totalLeftToPay, currency)}
+                  <ChevronRight size={16} />
+                </span>
+              </button>
             </div>
           )}
 

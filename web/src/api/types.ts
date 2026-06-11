@@ -94,6 +94,53 @@ export interface Settings {
   paydayHer: number[];
 }
 
+/* ── Кредиты ─────────────────────────────────────────────────────── */
+
+export interface CreditDataItem {
+  id: number;
+  name: string;
+  defaultAmount: number;
+  dueDay: number;
+  owner: User;
+  noData: false;
+  bank: string;
+  contractNumber: string | null;
+  openedDate: string | null;
+  purpose: string | null;
+  principal: number;
+  totalPayout: number;
+  monthsTotal: number;
+  paymentsBefore: number;
+  ratePercent: number | null;
+  paymentsMade: number;
+  paymentsLeft: number;
+  paidSum: number;
+  leftToPay: number;
+  overpay: number;
+  progress: number;
+  closeMonth: string | null;
+}
+
+export interface CreditNoDataItem {
+  id: number;
+  name: string;
+  defaultAmount: number;
+  dueDay: number;
+  owner: User;
+  noData: true;
+}
+
+export type CreditItem = CreditDataItem | CreditNoDataItem;
+
+export interface CreditsResponse {
+  summary: {
+    totalLeftToPay: number;
+    monthlyLoad: number;
+    count: number;
+  };
+  items: CreditItem[];
+}
+
 /* ── История ─────────────────────────────────────────────────────── */
 
 export interface HistoryExpenseCategory {

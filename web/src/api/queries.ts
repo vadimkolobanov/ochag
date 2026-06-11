@@ -4,6 +4,7 @@ import type {
   StateResponse,
   Category,
   BillsResponse,
+  CreditsResponse,
   SavingsResponse,
   Settings,
   HistoryResponse,
@@ -16,6 +17,7 @@ export const keys = {
   state: (user: User) => ['state', user] as const,
   categories: () => ['categories'] as const,
   bills: (month: string) => ['bills', month] as const,
+  credits: () => ['credits'] as const,
   savings: () => ['savings'] as const,
   settings: () => ['settings'] as const,
   history: (month: string) => ['history', month] as const,
@@ -61,6 +63,37 @@ export function useSettings() {
     queryKey: keys.settings(),
     queryFn: () => apiGet<Settings>('/api/settings'),
     staleTime: 60_000 * 10,
+  });
+}
+
+export function useCredits() {
+  return useQuery({
+    queryKey: keys.credits(),
+    queryFn: () => apiGet<CreditsResponse>(`/api/credits?today=${todayStr()}`),
+    staleTime: 20_000,
+  });
+}
+
+export function useUpsertCreditData() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, body }: {
+      id: number;
+      body: {
+        bank: string;
+        contractNumber?: string;
+        openedDate?: string;
+        purpose?: string;
+        principal: number;
+        totalPayout: number;
+        monthsTotal: number;
+        paymentsBefore?: number;
+        ratePercent?: number;
+      };
+    }) => apiMutate<{ ok: boolean }>('PUT', `/api/obligations/${id}/credit`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: keys.credits() });
+    },
   });
 }
 
@@ -172,6 +205,7 @@ export function usePayObligation() {
     onSuccess: (_data, { body }) => {
       void qc.invalidateQueries({ queryKey: keys.bills(body.month) });
       void qc.invalidateQueries({ queryKey: ['state'] });
+      void qc.invalidateQueries({ queryKey: keys.credits() });
     },
   });
 }
@@ -184,6 +218,7 @@ export function usePatchObligationPay() {
     onSuccess: (_data, { body }) => {
       void qc.invalidateQueries({ queryKey: keys.bills(body.month) });
       void qc.invalidateQueries({ queryKey: ['state'] });
+      void qc.invalidateQueries({ queryKey: keys.credits() });
     },
   });
 }
@@ -196,6 +231,7 @@ export function useUnpayObligation() {
     onSuccess: (_data, { month }) => {
       void qc.invalidateQueries({ queryKey: keys.bills(month) });
       void qc.invalidateQueries({ queryKey: ['state'] });
+      void qc.invalidateQueries({ queryKey: keys.credits() });
     },
   });
 }

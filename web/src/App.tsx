@@ -8,6 +8,7 @@ import { Auth } from './screens/Auth';
 import { ProfileSelect } from './screens/ProfileSelect';
 import { Today } from './screens/Today';
 import { Bills } from './screens/Bills';
+import { Credits } from './screens/Credits';
 import { Savings } from './screens/Savings';
 import { History } from './screens/History';
 import { Settings } from './screens/Settings';
@@ -69,6 +70,7 @@ function LoggedInApp({
               }
             />
             <Route path="/bills" element={<Bills user={user} showToast={showToast} />} />
+            <Route path="/credits" element={<Credits user={user} showToast={showToast} />} />
             <Route path="/savings" element={<Savings user={user} showToast={showToast} />} />
             <Route path="/history" element={<History user={user} showToast={showToast} />} />
             <Route path="/settings" element={<Settings showToast={showToast} />} />
