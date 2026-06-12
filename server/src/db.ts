@@ -104,6 +104,9 @@ CREATE TABLE IF NOT EXISTS rates (
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
 CREATE INDEX IF NOT EXISTS idx_savings_date ON savings_tx(date);
+
+-- Обновляем символ валюты с ₽ на Br (белорусский рубль)
+UPDATE settings SET value = 'Br' WHERE key = 'currency_symbol' AND value = '₽';
 `;
 
 const CATEGORY_SEEDS = [
@@ -118,7 +121,7 @@ const CATEGORY_SEEDS = [
 ];
 
 const SETTINGS_SEEDS: [string, string][] = [
-  ['currency_symbol', '₽'],
+  ['currency_symbol', 'Br'],
   ['payday_him', '[19]'],
   ['payday_her', '[10,25]'],
 ];
