@@ -46,7 +46,7 @@ function RatesCard({ byn, mainCurrency }: { byn: SavingsByn; mainCurrency: strin
   const d = new Date(byn.updatedAt);
   const dateLabel = Number.isNaN(d.getTime())
     ? ''
-    : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    : d.toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const cells: [SavingsCurrency, string][] = [
     ['USD', '$'],
     ['EUR', '€'],
@@ -255,13 +255,13 @@ export function Savings({ user, showToast }: Props) {
                 >
                   {fmtMoney(data.byn.total, 'Br')}
                 </span>
-                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1">
+                <div className="flex flex-col items-center gap-0.5 mt-1">
                   {CURRENCIES.map((cur) => {
                     const bal = data.balances[cur];
                     if (bal === 0) return null;
-                    const sym = cur === 'RUB' ? mainCurrency : CURRENCY_SYMBOLS[cur];
+                    const sym = cur === 'RUB' ? 'Br' : CURRENCY_SYMBOLS[cur];
                     return (
-                      <span key={cur} className="tabnum text-[16px] font-semibold text-muted">
+                      <span key={cur} className="tabnum text-[18px] font-semibold text-muted">
                         {fmtMoney(bal, sym)}
                       </span>
                     );

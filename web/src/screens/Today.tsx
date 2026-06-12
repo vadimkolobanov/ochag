@@ -57,9 +57,11 @@ function UpcomingBillsList({ bills, currency }: { bills: UpcomingBill[]; currenc
             onClick={() => navigate('/bills')}
           >
             <BillDot status={b.status} />
-            <span className="flex-1 text-[15px] font-medium text-ink text-left">{b.name}</span>
-            <span className="text-[13px] text-muted">до {b.dueDay}-го</span>
-            <span className="text-[14px] font-semibold text-ink tabnum ml-2">
+            <div className="flex-1 text-left min-w-0">
+              <div className="text-[15px] font-medium text-ink truncate">{b.name}</div>
+              <div className="text-[12px] text-muted">до {b.dueDay}-го</div>
+            </div>
+            <span className="text-[14px] font-semibold text-ink tabnum flex-shrink-0">
               {fmtMoney(b.amount, currency)}
             </span>
           </button>
