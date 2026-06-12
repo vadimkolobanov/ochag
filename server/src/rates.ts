@@ -66,7 +66,7 @@ export async function fetchBrestRates(): Promise<BrestRates> {
       return [p.cur, { buy, sell, unit: p.unit }];
     }),
   );
-  return Object.fromEntries(entries) as BrestRates;
+  return Object.fromEntries(entries) as unknown as BrestRates;
 }
 
 async function persist(db: Sql, rates: BrestRates, updatedAt: string): Promise<void> {
@@ -128,10 +128,8 @@ export async function getSavingsRates(db: Sql): Promise<RatesInfo | null> {
     const fromDb = await loadFromDb(db);
     if (fromDb) mem = fromDb;
   }
-  if (!mem) {
-    await refresh(db);
-    return mem ? { rates: mem.rates, updatedAt: mem.updatedAt, stale: false } : null;
-  }
+  if (!mem) await refresh(db);
+  if (!mem) return null;
   const stale = Date.now() - Date.parse(mem.updatedAt) > TTL_MS;
   if (stale) void refresh(db);
   return { rates: mem.rates, updatedAt: mem.updatedAt, stale };
