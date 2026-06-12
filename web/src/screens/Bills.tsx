@@ -176,7 +176,7 @@ export function Bills({ user, showToast }: Props) {
   const busy = payMut.isPending || patchPayMut.isPending || unpayMut.isPending;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto screen-pb safe-top animate-fade">
       <div className="px-4 pt-4 pb-0">
         <h1 className="font-unbounded font-bold text-primary text-[18px]">Платежи</h1>
       </div>

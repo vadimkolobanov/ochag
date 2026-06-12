@@ -4,8 +4,8 @@ import { Settings } from 'lucide-react';
 import { ArcCard, ArcCardSkeleton } from '../components/ArcCard';
 import { CategoryIcon } from '../components/CategoryGrid';
 import { fmtMoney, fmtDateShort, todayStr } from '../utils/format';
-import { useAppState, useDeleteExpense } from '../api/queries';
-import type { User, RecentExpense, UpcomingBill } from '../api/types';
+import { useAppState, useDeleteExpense, useTiles } from '../api/queries';
+import type { User, RecentExpense, UpcomingBill, TilesResponse } from '../api/types';
 
 interface Props {
   user: User;
@@ -160,9 +160,94 @@ function RecentExpenseItem({
   );
 }
 
+function SectionTiles({
+  tilesData,
+  currency,
+  showToast,
+}: {
+  tilesData: TilesResponse | undefined;
+  currency: string;
+  showToast: (msg: string) => void;
+}) {
+  const navigate = useNavigate();
+
+  const tiles = [
+    {
+      key: 'car',
+      icon: '🚗',
+      bg: 'rgba(61,90,128,.12)',
+      title: 'Авто',
+      sub: tilesData?.car?.nextHint ?? '—',
+      route: '/car',
+    },
+    {
+      key: 'credits',
+      icon: '🪵',
+      bg: 'rgba(217,164,65,.16)',
+      title: 'Кредиты',
+      sub: tilesData?.credits
+        ? `осталось ${fmtMoney(tilesData.credits.totalLeftToPay, currency)}`
+        : '—',
+      route: '/credits',
+    },
+    {
+      key: 'purchases',
+      icon: '🛒',
+      bg: 'rgba(30,92,70,.1)',
+      title: 'Покупки',
+      sub: 'скоро',
+      soon: true,
+    },
+    {
+      key: 'counters',
+      icon: '🔌',
+      bg: 'rgba(168,70,107,.1)',
+      title: 'Счётчики',
+      sub: 'скоро',
+      soon: true,
+    },
+  ];
+
+  return (
+    <div className="mx-4 mt-4">
+      <h2 className="text-[13px] font-bold text-muted uppercase tracking-wide mb-2">
+        Разделы
+      </h2>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {tiles.map((t) => (
+          <button
+            key={t.key}
+            className="press bg-surface rounded-card shadow-card text-left"
+            style={{
+              padding: '13px 14px',
+              cursor: t.route ? 'pointer' : 'default',
+              opacity: t.soon ? 0.55 : 1,
+            }}
+            onClick={() => {
+              if (t.soon) { showToast('Скоро 🌱'); return; }
+              if (t.route) navigate(t.route);
+            }}
+          >
+            <span
+              className="w-[34px] h-[34px] rounded-[11px] grid place-items-center text-[16px] block"
+              style={{ background: t.bg }}
+            >
+              {t.icon}
+            </span>
+            <div className="text-[14.5px] font-semibold text-ink mt-2">{t.title}</div>
+            <div className="text-[12px] text-muted mt-[2px] truncate">{t.sub}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function Today({ user, onSwitchUser, onOpenQuickInput, showToast }: Props) {
   const { data, isLoading, isError, refetch } = useAppState(user);
   const deleteExpense = useDeleteExpense(user);
+  const { data: tilesData } = useTiles();
+  const currency = data?.currency ?? 'Br';
 
   const [paydayDismissed, setPaydayDismissed] = useState(() => {
     return sessionStorage.getItem(`payday_dismissed_${todayStr()}`) === '1';
@@ -181,7 +266,7 @@ export function Today({ user, onSwitchUser, onOpenQuickInput, showToast }: Props
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-32 lg:pb-8">
+    <div className="flex flex-col h-full overflow-y-auto screen-pb lg:pb-8 animate-fade">
       {/* Шапка (только мобайл — на десктопе её заменяет боковая панель) */}
       <div className="lg:hidden flex items-center justify-between px-4 pt-4 pb-2 safe-top">
         <button onClick={onSwitchUser} className="active:opacity-70 transition-opacity">
@@ -262,6 +347,7 @@ export function Today({ user, onSwitchUser, onOpenQuickInput, showToast }: Props
           )}
 
           <UpcomingBillsList bills={data.upcomingBills} currency={data.currency} />
+          <SectionTiles tilesData={tilesData} currency={currency} showToast={showToast} />
           </div>
 
           <div className="lg:min-w-0 lg:mt-0">

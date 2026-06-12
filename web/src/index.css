@@ -147,8 +147,74 @@ body {
   border-radius: 8px;
 }
 
+/* Нижний отступ экранов — выше плавающего нава + safe area */
+.screen-pb {
+  padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Свайп-удаление */
 .swipe-item {
   touch-action: pan-y;
   user-select: none;
+}
+
+/* ── Анимации §2.3 ─────────────────────────────────────────────── */
+
+/* fade: появление экрана — opacity 0→1 + translateY(6px→0), 220ms */
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade {
+  animation: fade 220ms ease both;
+}
+
+/* rise: bottom-sheet — translateY(40%)→0, 260ms cubic */
+@keyframes rise {
+  from { transform: translateY(40%); }
+  to   { transform: translateY(0); }
+}
+.animate-rise {
+  animation: rise 260ms cubic-bezier(.2,.9,.3,1) both;
+}
+
+/* emberPulse: «уголёк» на дуге — opacity 1→.45→1, 1.8s infinite */
+@keyframes emberPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+.animate-ember {
+  animation: emberPulse 1.8s ease-in-out infinite;
+}
+
+/* grow: столбики графиков — scaleY(0)→1, 600ms, transform-origin bottom */
+@keyframes grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+.animate-grow {
+  animation: grow 600ms ease both;
+  transform-origin: bottom;
+}
+
+/* press: активное нажатие на кнопки и карточки */
+.press {
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+.press:active {
+  transform: scale(.97);
+  opacity: .7;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade,
+  .animate-rise,
+  .animate-ember,
+  .animate-grow {
+    animation: none;
+  }
+  .press {
+    transition: none;
+  }
 }

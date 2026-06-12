@@ -8,6 +8,7 @@ import type {
   SavingsResponse,
   Settings,
   HistoryResponse,
+  TilesResponse,
   User,
 } from './types';
 import { todayStr, monthStr } from '../utils/format';
@@ -21,6 +22,7 @@ export const keys = {
   savings: () => ['savings'] as const,
   settings: () => ['settings'] as const,
   history: (month: string) => ['history', month] as const,
+  tiles: () => ['tiles'] as const,
 };
 
 /* ── Запросы ───────────────────────────────────────────────────── */
@@ -94,6 +96,14 @@ export function useUpsertCreditData() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: keys.credits() });
     },
+  });
+}
+
+export function useTiles() {
+  return useQuery({
+    queryKey: keys.tiles(),
+    queryFn: () => apiGet<TilesResponse>(`/api/tiles?today=${todayStr()}`),
+    staleTime: 30_000,
   });
 }
 

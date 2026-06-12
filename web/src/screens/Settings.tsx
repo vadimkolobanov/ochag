@@ -181,7 +181,7 @@ export function Settings({ showToast }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto screen-pb safe-top animate-fade">
       {/* Header */}
       <div className="flex items-center gap-2 px-4 pt-4 pb-2">
         <button

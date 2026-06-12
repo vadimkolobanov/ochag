@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useCountUp } from '../hooks/useCountUp';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { BottomSheet } from '../components/BottomSheet';
@@ -119,9 +120,10 @@ export function Credits({ user: _user, showToast }: Props) {
   const billStatusMap = new Map(billsData?.items.map((b) => [b.id, b.status]));
   const dataItems = data?.items.filter((i): i is CreditDataItem => !i.noData);
   const noDataItems = data?.items.filter((i) => i.noData);
+  const totalAnimated = useCountUp(data?.summary.totalLeftToPay ?? 0, 700);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto screen-pb safe-top animate-fade">
       {/* Header */}
       <div className="flex items-center gap-1 px-4 pt-4 pb-2">
         <button
@@ -164,7 +166,7 @@ export function Credits({ user: _user, showToast }: Props) {
               <div className="mx-4 mt-1 mb-3 bg-surface rounded-card shadow-card px-4 py-4">
                 <p className="text-[12px] font-bold text-muted uppercase tracking-wide mb-1">Осталось выплатить</p>
                 <p className="text-[42px] font-bold text-ink tabnum leading-none">
-                  {fmtMoney(data.summary.totalLeftToPay, currency)}
+                  {fmtMoney(totalAnimated, currency)}
                 </p>
                 <p className="text-[13px] text-muted mt-1">
                   в месяц <span className="tabnum font-semibold text-ink">{fmtMoney(data.summary.monthlyLoad, currency)}</span>
@@ -203,11 +205,12 @@ export function Credits({ user: _user, showToast }: Props) {
                             {s.value === 0 ? 'свобода' : fmtMoney(s.value, currency)}
                           </span>
                           <div
-                            className="w-full rounded-t-lg rounded-b"
+                            className="w-full rounded-t-lg rounded-b animate-grow"
                             style={{
                               height: `${Math.max(6, (s.value / maxV) * 64)}px`,
                               background: i === 0 ? 'var(--amber)' : s.value === 0 ? 'var(--ok)' : 'var(--primary)',
                               opacity: i === 0 ? 1 : 0.9,
+                              animationDelay: `${i * 80}ms`,
                             }}
                           />
                           <span className="text-[10px] text-muted text-center leading-tight">{s.label}</span>
@@ -270,16 +273,37 @@ export function Credits({ user: _user, showToast }: Props) {
                       <p className="text-[12px] text-muted mt-1 ml-[18px]">{subtitle}</p>
                     ) : null}
 
-                    {/* Progress bar */}
-                    <div className="mt-3">
-                      <div className="h-2 bg-bg rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${item.progress * 100}%`, backgroundColor: 'var(--ok)' }}
-                        />
+                    {/* Лента погашения */}
+                    <div className="mt-3" aria-label={`выплачено ${item.paymentsMade} из ${item.monthsTotal}`}>
+                      <div className="flex gap-[2px] flex-wrap">
+                        {Array.from({ length: item.monthsTotal }, (_, i) => {
+                          const isCurrent = i === item.paymentsMade && item.paymentsLeft > 0;
+                          const isPaid = i < item.paymentsMade;
+                          return (
+                            <div
+                              key={i}
+                              className={isCurrent ? 'animate-ember' : ''}
+                              style={{
+                                width: `${Math.max(4, Math.min(10, Math.floor(100 / item.monthsTotal) - 1))}%`,
+                                minWidth: 4,
+                                maxWidth: 14,
+                                height: 7,
+                                borderRadius: 4,
+                                background: isPaid
+                                  ? 'var(--primary)'
+                                  : isCurrent
+                                  ? 'var(--amber)'
+                                  : '#E7E5DE',
+                              }}
+                            />
+                          );
+                        })}
                       </div>
-                      <p className="text-[12px] text-muted mt-1">
-                        выплачено {item.paymentsMade} из {item.monthsTotal}
+                      <p className="text-[12px] text-muted mt-1.5">
+                        {item.paymentsLeft === 0
+                          ? <span style={{ color: 'var(--ok)' }}>выплачен 🎉</span>
+                          : <>выплачено <b>{item.paymentsMade}</b> из <b>{item.monthsTotal}</b>{item.closeMonth ? ` · закроется ${fmtCloseMonth(item.closeMonth)}` : ''}</>
+                        }
                       </p>
                     </div>
 
@@ -291,10 +315,7 @@ export function Credits({ user: _user, showToast }: Props) {
                       </div>
                       <div className="flex justify-between gap-2">
                         <span className="text-muted">Платежей осталось</span>
-                        <span className="text-ink tabnum text-right">
-                          {item.paymentsLeft}
-                          {item.closeMonth ? `, закроется ${fmtCloseMonth(item.closeMonth)}` : ''}
-                        </span>
+                        <span className="text-ink tabnum">{item.paymentsLeft}</span>
                       </div>
                       <div className="flex justify-between gap-2">
                         <span className="text-muted">Платёж</span>

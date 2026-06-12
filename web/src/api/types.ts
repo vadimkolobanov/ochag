@@ -155,6 +155,13 @@ export interface CreditsResponse {
   items: CreditItem[];
 }
 
+/* ── Плитки «Разделы» ────────────────────────────────────────────── */
+
+export interface TilesResponse {
+  credits: { totalLeftToPay: number; count: number } | null;
+  car: { nextHint: string } | null;
+}
+
 /* ── История ─────────────────────────────────────────────────────── */
 
 export interface HistoryExpenseCategory {
