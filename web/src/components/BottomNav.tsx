@@ -11,26 +11,33 @@ const tabs = [
 export function BottomNav() {
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface border-t border-[#E8E7E2] safe-bottom"
-      style={{ maxWidth: '480px', margin: '0 auto', left: '50%', transform: 'translateX(-50%)', right: 'auto', width: '100%' }}
+      className="lg:hidden fixed z-40 flex"
+      style={{
+        bottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: 'calc(min(480px, 100%) - 28px)',
+        background: '#FFFFFF',
+        borderRadius: 26,
+        boxShadow: '0 8px 28px rgb(38 40 43 / 0.18), 0 1px 0 rgb(255 255 255 / 0.6) inset',
+      }}
     >
-      <div className="flex">
-        {tabs.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            end={to === '/'}
-            className={({ isActive }) =>
-              `flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition-colors ${
-                isActive ? 'text-primary' : 'text-muted'
-              }`
-            }
-          >
-            <Icon size={22} strokeWidth={1.8} />
-            <span className="text-[11px] font-medium leading-none">{label}</span>
-          </NavLink>
-        ))}
-      </div>
+      {tabs.map(({ to, icon: Icon, label }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={to === '/'}
+          className={({ isActive }) =>
+            `flex-1 flex flex-col items-center justify-center gap-[3px] transition-colors ${
+              isActive ? 'text-primary' : 'text-muted'
+            }`
+          }
+          style={{ padding: '9px 0 11px', borderRadius: 26 }}
+        >
+          <Icon size={20} strokeWidth={1.8} />
+          <span className="text-[10.5px] font-medium leading-none">{label}</span>
+        </NavLink>
+      ))}
     </nav>
   );
 }

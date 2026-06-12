@@ -16,6 +16,13 @@ const STATUS_DOT: Record<string, string> = {
   upcoming: 'var(--muted)',
 };
 
+const STATUS_LABEL: Record<string, string> = {
+  paid: 'оплачен',
+  due_soon: 'скоро срок',
+  overdue: 'просрочен',
+  upcoming: 'впереди',
+};
+
 const KIND_LABELS: Record<string, string> = {
   credit: 'Кредит', utilities: 'Коммуналка', mobile: 'Связь',
   internet: 'Интернет', other: 'Другое',
@@ -169,7 +176,7 @@ export function Bills({ user, showToast }: Props) {
   const busy = payMut.isPending || patchPayMut.isPending || unpayMut.isPending;
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
       <div className="px-4 pt-4 pb-0">
         <h1 className="font-unbounded font-bold text-primary text-[18px]">Платежи</h1>
       </div>
@@ -215,13 +222,24 @@ export function Bills({ user, showToast }: Props) {
             <div className="mx-4 mb-3">
               <button
                 onClick={() => navigate('/credits')}
-                className="w-full h-12 bg-surface rounded-card shadow-card flex items-center justify-between px-4 active:opacity-70 transition-opacity"
+                className="w-full bg-surface rounded-card shadow-card flex items-center gap-3 px-4 py-3.5 active:opacity-70 transition-opacity"
               >
-                <span className="text-[15px] font-medium text-ink">Кредиты</span>
-                <span className="flex items-center gap-1 text-[14px] text-muted">
-                  осталось выплатить{'\u00A0'}{fmtMoney(creditsData.summary.totalLeftToPay, currency)}
-                  <ChevronRight size={16} />
+                <span
+                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[17px] flex-shrink-0"
+                  style={{ background: 'rgba(217,164,65,0.16)' }}
+                >
+                  🪵
                 </span>
+                <div className="flex-1 text-left min-w-0">
+                  <div className="text-[15px] font-semibold text-ink">Кредиты</div>
+                  <div className="text-[13px] text-muted">
+                    осталось выплатить{' '}
+                    <span className="tabnum font-semibold text-ink">
+                      {fmtMoney(creditsData.summary.totalLeftToPay, currency)}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="text-muted flex-shrink-0" />
               </button>
             </div>
           )}
@@ -245,7 +263,9 @@ export function Bills({ user, showToast }: Props) {
                     />
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-[15px] font-medium text-ink truncate">{bill.name}</div>
-                      <div className="text-[12px] text-muted">до {bill.due_day}-го</div>
+                      <div className="text-[12px]" style={{ color: bill.status === 'overdue' ? 'var(--danger)' : 'var(--muted)' }}>
+                        до {bill.due_day}-го · {STATUS_LABEL[bill.status]}
+                      </div>
                     </div>
                     <span className="text-[14px] font-semibold text-ink tabnum">
                       {fmtMoney(bill.payment?.amount ?? bill.default_amount, currency)}

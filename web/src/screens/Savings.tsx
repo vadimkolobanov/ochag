@@ -221,7 +221,7 @@ export function Savings({ user, showToast }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
       <div className="px-4 pt-4 pb-2">
         <h1 className="font-unbounded font-bold text-primary text-[18px]">Копилка</h1>
       </div>

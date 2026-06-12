@@ -22,11 +22,6 @@ function fmtOpenedDate(iso: string): string {
   return `${monthDay} ${y}`;
 }
 
-function pluralCredit(n: number): string {
-  if (n % 10 === 1 && n % 100 !== 11) return 'кредит';
-  if (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20)) return 'кредита';
-  return 'кредитов';
-}
 
 const STATUS_DOT: Record<string, string> = {
   paid: 'var(--ok)',
@@ -126,7 +121,7 @@ export function Credits({ user: _user, showToast }: Props) {
   const noDataItems = data?.items.filter((i) => i.noData);
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 safe-top">
+    <div className="flex flex-col h-full overflow-y-auto pb-32 safe-top">
       {/* Header */}
       <div className="flex items-center gap-1 px-4 pt-4 pb-2">
         <button
@@ -165,24 +160,64 @@ export function Credits({ user: _user, showToast }: Props) {
         <>
           {/* Summary card */}
           {data.summary.count > 0 && (
-            <div className="mx-4 mt-1 mb-4 bg-surface rounded-card shadow-card px-4 py-4">
-              <p className="text-[28px] font-bold text-ink tabnum leading-none">
-                {fmtMoney(data.summary.totalLeftToPay, currency)}
-              </p>
-              <p className="text-[13px] text-muted mt-1">всего осталось выплатить</p>
-              <div className="flex gap-6 mt-3 pt-3 border-t border-[#F0EFE9]">
-                <div>
-                  <p className="text-[15px] font-semibold text-ink tabnum">
-                    {fmtMoney(data.summary.monthlyLoad, currency)}
-                  </p>
-                  <p className="text-[12px] text-muted">в месяц</p>
-                </div>
-                <div>
-                  <p className="text-[15px] font-semibold text-ink">{data.summary.count}</p>
-                  <p className="text-[12px] text-muted">{pluralCredit(data.summary.count)}</p>
-                </div>
+            <>
+              <div className="mx-4 mt-1 mb-3 bg-surface rounded-card shadow-card px-4 py-4">
+                <p className="text-[12px] font-bold text-muted uppercase tracking-wide mb-1">Осталось выплатить</p>
+                <p className="text-[42px] font-bold text-ink tabnum leading-none">
+                  {fmtMoney(data.summary.totalLeftToPay, currency)}
+                </p>
+                <p className="text-[13px] text-muted mt-1">
+                  в месяц <span className="tabnum font-semibold text-ink">{fmtMoney(data.summary.monthlyLoad, currency)}</span>
+                  {' · '}кредитов {data.summary.count}
+                </p>
               </div>
-            </div>
+
+              {/* «Станет легче» — нагрузка после каждого закрытия */}
+              {dataItems && dataItems.length > 1 && (() => {
+                // закрытия, отсортированные по дате
+                const closures = dataItems
+                  .filter((c) => c.closeMonth && c.paymentsLeft > 0)
+                  .sort((a, b) => (a.closeMonth! < b.closeMonth! ? -1 : 1))
+                  .map((c) => {
+                    const [y, m] = c.closeMonth!.split('-').map(Number);
+                    return {
+                      label: `${MONTHS_LOC[m - 1].slice(0, 3)}'${String(y).slice(2)}`,
+                      monthly: c.defaultAmount,
+                    };
+                  });
+                if (closures.length === 0) return null;
+                let load = data.summary.monthlyLoad;
+                const steps: { label: string; value: number }[] = [{ label: 'сейчас', value: load }];
+                for (const cl of closures) {
+                  load = Math.max(0, load - cl.monthly);
+                  steps.push({ label: `после ${cl.label}`, value: load });
+                }
+                const maxV = steps[0].value;
+                return (
+                  <div className="mx-4 mb-3 bg-surface rounded-card shadow-card px-4 pt-3 pb-4">
+                    <p className="text-[14px] font-semibold text-ink mb-3">Станет легче</p>
+                    <div className="flex items-end gap-2.5" style={{ height: 96 }}>
+                      {steps.map((s, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                          <span className="tabnum text-[11px] font-semibold" style={{ color: s.value === 0 ? 'var(--ok)' : 'var(--ink)' }}>
+                            {s.value === 0 ? 'свобода' : fmtMoney(s.value, currency)}
+                          </span>
+                          <div
+                            className="w-full rounded-t-lg rounded-b"
+                            style={{
+                              height: `${Math.max(6, (s.value / maxV) * 64)}px`,
+                              background: i === 0 ? 'var(--amber)' : s.value === 0 ? 'var(--ok)' : 'var(--primary)',
+                              opacity: i === 0 ? 1 : 0.9,
+                            }}
+                          />
+                          <span className="text-[10px] text-muted text-center leading-tight">{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+            </>
           )}
 
           {/* Empty state */}

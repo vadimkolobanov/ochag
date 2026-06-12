@@ -181,7 +181,7 @@ export function Today({ user, onSwitchUser, onOpenQuickInput, showToast }: Props
   }
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-24 lg:pb-8">
+    <div className="flex flex-col h-full overflow-y-auto pb-32 lg:pb-8">
       {/* Шапка (только мобайл — на десктопе её заменяет боковая панель) */}
       <div className="lg:hidden flex items-center justify-between px-4 pt-4 pb-2 safe-top">
         <button onClick={onSwitchUser} className="active:opacity-70 transition-opacity">

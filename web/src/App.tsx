@@ -82,10 +82,12 @@ function LoggedInApp({
 
           <button
             onClick={() => openQuick('expense')}
-            className="lg:hidden fixed bottom-[72px] z-40 w-14 h-14 rounded-full bg-primary text-surface shadow-lg flex items-center justify-center text-[28px] font-light active:opacity-80 transition-opacity"
+            className="lg:hidden fixed z-40 w-14 h-14 rounded-full bg-primary text-surface flex items-center justify-center text-[30px] font-light active:opacity-80 transition-opacity"
             style={{
+              bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))',
               left: '50%',
               transform: 'translateX(calc(-50% + 120px))',
+              boxShadow: '0 6px 16px rgb(30 92 70 / 0.4)',
             }}
             aria-label="Добавить"
           >
