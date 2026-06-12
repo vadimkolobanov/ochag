@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { savingsBalances, type SavingsTxRow } from '../core/logic.js';
+import { savingsBalances, bynTotal, type SavingsTxRow } from '../core/logic.js';
+import { getSavingsRates } from '../rates.js';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Неверная дата');
 const user = z.enum(['him', 'her']);
@@ -23,7 +24,17 @@ export const savingsRoutes: FastifyPluginAsync = async (app) => {
     const items = await app.db<SavingsTxRow[]>`
       SELECT id, type, "user", date, amount, currency, purpose, income_id
       FROM savings_tx ORDER BY date DESC, id DESC`;
-    return { balances: savingsBalances(items), items };
+    const balances = savingsBalances(items);
+    const rateInfo = await getSavingsRates(app.db);
+    const byn = rateInfo
+      ? {
+          total: bynTotal(balances, rateInfo.rates),
+          rates: rateInfo.rates,
+          updatedAt: rateInfo.updatedAt,
+          stale: rateInfo.stale,
+        }
+      : null;
+    return { balances, items, byn };
   });
 
   app.post('/api/savings/tx', async (req, reply) => {

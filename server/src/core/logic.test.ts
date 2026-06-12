@@ -9,7 +9,9 @@ import {
   billStatus,
   savingsBalance,
   billsSummary,
+  bynTotal,
   type DailyData,
+  type BrestRates,
 } from './logic.js';
 
 // Проверенные по календарю 2026 факты (UTC):
@@ -261,5 +263,27 @@ describe('§v1.1 creditCalc', () => {
       '2026-06',
     );
     expect(r.overpay).toBe(0);
+  });
+});
+
+describe('§7.5 bynTotal', () => {
+  const rates: BrestRates = {
+    USD: { buy: 2.822, sell: 2.829, unit: 1 },
+    EUR: { buy: 3.27, sell: 3.294, unit: 1 },
+    RUB: { buy: 3.671, sell: 3.799, unit: 100 },
+  };
+
+  it('конвертирует 1500$ + 150€ в BYN по курсу покупки', () => {
+    // 150000 коп USD × 2.822 = 423300; 15000 коп EUR × 3.27 = 49050
+    expect(bynTotal({ RUB: 0, EUR: 15000, USD: 150000 }, rates)).toBe(423300 + 49050);
+  });
+
+  it('RUB котируется за 100 единиц', () => {
+    // 100000 коп RUB (=1000 ₽) × 3.671 / 100 = 3671 коп BYN
+    expect(bynTotal({ RUB: 100000, EUR: 0, USD: 0 }, rates)).toBe(3671);
+  });
+
+  it('пустая копилка → 0', () => {
+    expect(bynTotal({ RUB: 0, EUR: 0, USD: 0 }, rates)).toBe(0);
   });
 });

@@ -83,9 +83,23 @@ export interface SavingsTx {
   income_id: number | null;
 }
 
+export interface CurrencyRate {
+  buy: number;
+  sell: number;
+  unit: number;
+}
+
+export interface SavingsByn {
+  total: number;
+  rates: { USD: CurrencyRate; EUR: CurrencyRate; RUB: CurrencyRate };
+  updatedAt: string;
+  stale: boolean;
+}
+
 export interface SavingsResponse {
   balances: { RUB: number; EUR: number; USD: number };
   items: SavingsTx[];
+  byn: SavingsByn | null;
 }
 
 export interface Settings {

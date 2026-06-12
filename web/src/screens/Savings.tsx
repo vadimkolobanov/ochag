@@ -4,7 +4,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { Pinpad, pinpadToKopecks } from '../components/Pinpad';
 import { fmtMoney, fmtDateShort, todayStr } from '../utils/format';
 import { useSavings, useSettings, useAddSavingsTx, useDeleteSavingsTx } from '../api/queries';
-import type { User, SavingsTx, SavingsCurrency } from '../api/types';
+import type { User, SavingsTx, SavingsCurrency, SavingsByn } from '../api/types';
 
 interface Props {
   user: User;
@@ -38,6 +38,48 @@ function CurrencyChips({
           {CURRENCY_SYMBOLS[c]}
         </button>
       ))}
+    </div>
+  );
+}
+
+function RatesCard({ byn, mainCurrency }: { byn: SavingsByn; mainCurrency: string }) {
+  const d = new Date(byn.updatedAt);
+  const dateLabel = Number.isNaN(d.getTime())
+    ? ''
+    : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  const cells: [SavingsCurrency, string][] = [
+    ['USD', '$'],
+    ['EUR', '€'],
+    ['RUB', mainCurrency],
+  ];
+  return (
+    <div className="mx-4 mb-5">
+      <div className="bg-surface rounded-card shadow-card px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[12px] font-bold text-muted uppercase tracking-wide">
+            Курс покупки · Брест
+          </span>
+          {dateLabel && (
+            <span className="text-[11px] text-muted">
+              {dateLabel}
+              {byn.stale ? ' · ↻' : ''}
+            </span>
+          )}
+        </div>
+        <div className="flex justify-between gap-2">
+          {cells.map(([cur, sym]) => {
+            const r = byn.rates[cur];
+            return (
+              <div key={cur} className="flex flex-col items-center flex-1">
+                <span className="text-[12px] text-muted">
+                  {r.unit === 1 ? '1' : r.unit} {sym}
+                </span>
+                <span className="tabnum text-[15px] font-semibold text-ink">{r.buy} Br</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -200,28 +242,54 @@ export function Savings({ user, showToast }: Props) {
       ) : data ? (
         <>
           {/* Balances */}
-          <div className="flex flex-col items-center py-5 gap-3">
+          <div className="flex flex-col items-center py-5 gap-2">
             <div className="flex items-center gap-2">
               <PiggyBank size={18} style={{ color: 'var(--amber)' }} />
               <span className="text-[12px] font-bold text-muted uppercase tracking-wide">Накоплено</span>
             </div>
-            <div className="flex flex-col items-center gap-1">
-              {CURRENCIES.map((cur) => {
-                const bal = data.balances[cur];
-                const sym = cur === 'RUB' ? mainCurrency : CURRENCY_SYMBOLS[cur];
-                if (bal === 0 && cur !== 'RUB') return null;
-                return (
-                  <span
-                    key={cur}
-                    className={`tabnum font-bold leading-tight ${cur === 'RUB' ? 'text-[44px]' : 'text-[28px]'}`}
-                    style={{ color: 'var(--amber)' }}
-                  >
-                    {fmtMoney(bal, sym)}
-                  </span>
-                );
-              })}
-            </div>
+            {data.byn ? (
+              <>
+                <span
+                  className="tabnum font-bold leading-tight text-[44px]"
+                  style={{ color: 'var(--amber)' }}
+                >
+                  {fmtMoney(data.byn.total, 'Br')}
+                </span>
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-1">
+                  {CURRENCIES.map((cur) => {
+                    const bal = data.balances[cur];
+                    if (bal === 0) return null;
+                    const sym = cur === 'RUB' ? mainCurrency : CURRENCY_SYMBOLS[cur];
+                    return (
+                      <span key={cur} className="tabnum text-[16px] font-semibold text-muted">
+                        {fmtMoney(bal, sym)}
+                      </span>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-1">
+                {CURRENCIES.map((cur) => {
+                  const bal = data.balances[cur];
+                  const sym = cur === 'RUB' ? mainCurrency : CURRENCY_SYMBOLS[cur];
+                  if (bal === 0 && cur !== 'RUB') return null;
+                  return (
+                    <span
+                      key={cur}
+                      className={`tabnum font-bold leading-tight ${cur === 'RUB' ? 'text-[44px]' : 'text-[28px]'}`}
+                      style={{ color: 'var(--amber)' }}
+                    >
+                      {fmtMoney(bal, sym)}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          {/* Exchange rates */}
+          {data.byn && <RatesCard byn={data.byn} mainCurrency={mainCurrency} />}
 
           {/* Action buttons */}
           <div className="mx-4 flex gap-3 mb-5">

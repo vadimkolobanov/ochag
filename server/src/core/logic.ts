@@ -208,6 +208,28 @@ export function savingsBalance(txs: SavingsTxRow[]): number {
   return savingsBalances(txs).RUB;
 }
 
+/** Курс одной валюты к белорусскому рублю (лучший в Бресте). */
+export interface CurrencyRate {
+  buy: number; // сколько BYN банк даёт за `unit` единиц валюты (курс покупки)
+  sell: number; // сколько BYN банк берёт за `unit` единиц валюты (курс продажи)
+  unit: number; // номинал котировки: 1 для USD/EUR, 100 для RUB
+}
+
+export interface BrestRates {
+  USD: CurrencyRate;
+  EUR: CurrencyRate;
+  RUB: CurrencyRate;
+}
+
+/**
+ * Конвертирует остатки копилки в белорусские рубли по курсу покупки.
+ * Все суммы — в минимальных единицах (копейках). Возвращает копейки BYN.
+ */
+export function bynTotal(balances: SavingsBalances, rates: BrestRates): number {
+  const conv = (amount: number, r: CurrencyRate) => Math.round((amount * r.buy) / r.unit);
+  return conv(balances.USD, rates.USD) + conv(balances.EUR, rates.EUR) + conv(balances.RUB, rates.RUB);
+}
+
 /** Элемент чек-листа месяца: плановая сумма обязательства + факт оплаты (если есть). */
 export interface BillItem {
   defaultAmount: number;

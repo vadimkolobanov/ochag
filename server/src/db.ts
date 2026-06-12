@@ -93,6 +93,14 @@ CREATE TABLE IF NOT EXISTS credits (
   CHECK (payments_before <= months_total)
 );
 
+CREATE TABLE IF NOT EXISTS rates (
+  currency TEXT PRIMARY KEY,
+  buy REAL NOT NULL,
+  sell REAL NOT NULL,
+  unit INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date);
 CREATE INDEX IF NOT EXISTS idx_incomes_date ON incomes(date);
 CREATE INDEX IF NOT EXISTS idx_savings_date ON savings_tx(date);
